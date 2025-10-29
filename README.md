@@ -1,6 +1,6 @@
-# Sistema de Practicas Profesionales
+# Sistema de Gestion de entradas
 
-Este documento describe los pasos para configurar y ejecutar el Sistema de Practicas Profesionales utilizando Docker.
+Este documento describe los pasos para configurar.
 
 ## Pre-requisitos
 Antes de comenzar, asegúrate de contar con los siguientes requisitos:
@@ -20,7 +20,7 @@ choco install make
 Para clonar el repositorio ejecuta el siguiente comando:
 
 ```shell
-git clone https://gitlab.com/jr.ruiz681/practicasprofesionales-uaie-uaz.git
+git clone https://github.com/juanpaxz/sistema_gestion_entradas_salidas.git
 ```
 
 Crea el archivo:
@@ -85,22 +85,22 @@ make build
 La primera ejecución puede tardar algunos minutos, pero las siguientes serán más rápidas.
 
 Este comando crea siete contenedores:
-- **nginx-practicas**: Puerta de entrada única del sistema, la cual recibe las peticiones.
-- **practicas**: Aplicación Django del sistema de practicas profesionales.
-- **practicas-db**: Base de datos MariaDB para el sistema de practicas profesionales.
+- **nginx-gestion**: Puerta de entrada única del sistema, la cual recibe las peticiones.
+- **gestion**: Aplicación Django del sistema de gestion de entradas.
+- **gestion-db**: Base de datos MariaDB para el sistema de gestion entradas.
 
 Sabrás que los contenedores están listos cuando veas un mensaje similar a este:
 
 ```shell
- ✔ practicas                                        Built 
- ✔ Network practicasprofesionales-uaie-uaz_default  Created 
- ✔ Container practicas-db                           Healthy 
- ✔ Container practicas                              Started 
- ✔ Container nginx-practicas                        Started 
+ ✔ gestion                                          Built 
+ ✔ Network sistema_gestion_entradas_salidas_default Created 
+ ✔ Container gestion_db                             Healthy 
+ ✔ Container gestion_de_entradas                    Started 
+ ✔ Container nginx-gestion                          Started 
 ```
 
 Una vez listos, puedes acceder a los sistemas desde:
-- [`Sistema de Practicas Profesionales`](http://localhost/practicas).
+- [`Sistema de gestion_de_entradas`](http://localhost/8001).
 
 ⚠ **Nota:** Es necesario esperar aproximadamente 5 segundos para que los contenedores carguen completamente.
 
@@ -139,7 +139,7 @@ Recuerda esperar 5 segundos para que la base de datos esté lista.
 
 ## Base de Datos
 
-En la base de datos del  **Sistema de Practicas Profesionales** algunos de los datos se llenan automáticamente al ejecutar las migraciones.
+En la base de datos del  **Sistema de gestion de entradas** algunos de los datos se llenan automáticamente al ejecutar las migraciones.
 
 Si necesitas reiniciar las bases de datos por completo (borrar todos los datos), puedes ejecutar:
 
