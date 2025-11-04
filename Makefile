@@ -30,6 +30,12 @@ destroy: ## Remueve todos los contenedores y sus volumenes
 	docker compose down -v
 
 # -----------------------
+# crear aplicacion
+# -----------------------
+createapp: ## Crea una nueva aplicacion Django dentro del proyecto gestion_de_entradas
+	docker compose exec gestion_de_entradas bash -c "/env/bin/python manage.py startapp $(name)"
+
+# -----------------------
 # Makemigrations
 # -----------------------
 migrations: ## Crea las migraciones para gestion_de_entradas

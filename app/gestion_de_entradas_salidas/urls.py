@@ -21,4 +21,5 @@ from django.http import HttpResponse
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', lambda request: HttpResponse("¡Django funciona! 🎉")),
+    path('control/', include('control.urls')),
 ]
