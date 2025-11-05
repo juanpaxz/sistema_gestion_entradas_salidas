@@ -1,0 +1,52 @@
+/* Dashboard color accents using project palette variables from base */
+.stat-card { border: none; overflow: hidden; border-radius: .75rem; transition: transform .18s ease, box-shadow .18s ease; }
+.stat-card:hover { transform: translateY(-6px); }
+.stat-card .card-body { padding: 1.5rem; position: relative; min-height:110px; }
+.stat-value { font-size: 2.25rem; line-height: 1; margin: .15rem 0 .35rem; font-weight: 600; }
+
+/* Primary (azul) */
+.stat-card-primary .card-body {
+  background: linear-gradient(90deg, var(--bs-primary) 0%, #5aa5d9 100%);
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(45,139,210,0.16);
+}
+
+/* Accent (amarillo) */
+.stat-card-accent .card-body {
+  background: linear-gradient(90deg, var(--brand-accent) 0%, #fff1a8 100%);
+  color: #052235; /* dark text for yellow */
+  box-shadow: 0 8px 20px rgba(255,233,92,0.12);
+}
+
+/* Danger (rojo) */
+.stat-card-danger .card-body {
+  background: linear-gradient(90deg, var(--bs-danger) 0%, #c63b3b 100%);
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(198,59,59,0.14);
+}
+
+.stat-card .card-title { font-weight: 700; }
+.stat-card .display-6 { font-weight: 600; }
+
+/* Responsive tweaks */
+@media (max-width: 575px){
+  .stat-value { font-size: 1.6rem; }
+  .stat-card .card-body { min-height: 90px; }
+}
+
+/* Dark-mode variants: slightly desaturate and darken gradients for comfortable contrast */
+body.dark .stat-card-primary .card-body{
+  background: linear-gradient(90deg, #1e4f6f 0%, #2a6a90 100%);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.55);
+}
+body.dark .stat-card-accent .card-body{
+  background: linear-gradient(90deg, #7a6b2a 0%, #9f8b3d 100%);
+  color: #f6f3de;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.55);
+}
+body.dark .stat-card-danger .card-body{
+  background: linear-gradient(90deg, #7a2525 0%, #882b2b 100%);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.55);
+}
+/* Button contrast on colored cards */
+.stat-card-danger .btn { border: 1px solid rgba(255,255,255,0.12); }

@@ -1,0 +1,80 @@
+{% load group_tags %}
+<style>
+  /* Navbar custom theme using project palette */
+  .navbar-custom {
+    background: linear-gradient(90deg, var(--brand-primary) 0%, #5aa5d9 100%);
+  }
+  .navbar-custom .nav-link,
+  .navbar-custom .navbar-text {
+    color: rgba(255,255,255,0.95) !important;
+  }
+  .navbar-custom .navbar-brand { color: #fff !important; font-weight:700; }
+  .navbar-custom .nav-link:hover { color: var(--brand-accent) !important; }
+  .navbar-custom .btn-outline-light { border-color: rgba(255,255,255,0.2); color: #fff; }
+  @media (max-width: 767px){
+    .navbar-custom .navbar-collapse { background: rgba(0,0,0,0.03); }
+  }
+</style>
+
+<nav class="navbar navbar-expand-lg navbar-custom">
+  <div class="container">
+    <a class="navbar-brand" href="/">Control Incidencias</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
+        <li class="nav-item mx-1">
+          <a class="nav-link" href="/">Inicio</a>
+        </li>
+        {% if user.is_authenticated %}
+          {% if user|has_group:"administracion" %}
+            <li class="nav-item mx-1">
+              <a class="nav-link" href="{% url 'control:dashboard' %}">Dashboard</a>
+            </li>
+            <li class="nav-item mx-1">
+              <a class="nav-link" href="/admin/">Admin</a>
+            </li>
+            <li class="nav-item mx-1">
+              <a class="nav-link" href="/control/empleados/">Empleados</a>
+            </li>
+          {% elif user|has_group:"empleado" %}
+            <li class="nav-item mx-1">
+              <a class="nav-link" href="/control/mis-registros/">Mis registros</a>
+            </li>
+            <li class="nav-item mx-1">
+              <a class="nav-link" href="/control/subir-justificante/">Subir justificante</a>
+            </li>
+          {% else %}
+            <li class="nav-item mx-1">
+              <a class="nav-link" href="{% url 'control:dashboard' %}">Mi área</a>
+            </li>
+          {% endif %}
+        {% endif %}
+      </ul>
+
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0 d-flex align-items-center">
+        {% if user.is_authenticated %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              {{ user.get_full_name|default:user.username }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+              <li><a class="dropdown-item" href="{% url 'control:dashboard' %}">Mi panel</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{% url 'control:logout' %}">Cerrar sesión</a></li>
+            </ul>
+          </li>
+        {% else %}
+          <li class="nav-item">
+            <a class="btn btn-outline-light" href="{% url 'control:login' %}">Iniciar sesión</a>
+          </li>
+        {% endif %}
+        <li class="nav-item ms-2">
+          <button id="theme-toggle" class="btn btn-sm btn-outline-light" title="Alternar tema">🌙</button>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>

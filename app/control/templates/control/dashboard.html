@@ -1,0 +1,61 @@
+{% extends 'control/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Administrador{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'control/css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row mb-4">
+    <div class="col-12">
+      <h2>Dashboard</h2>
+      <p class="text-muted">Resumen rápido del estado del sistema</p>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="card shadow-sm stat-card stat-card-primary">
+        <div class="card-body">
+          <h5 class="card-title">Empleados</h5>
+          <p class="display-6 mb-0 stat-value">{{ total_empleados }}</p>
+          <small class="text-muted">Total de empleados registrados</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card shadow-sm stat-card stat-card-accent">
+        <div class="card-body">
+          <h5 class="card-title">Activos</h5>
+          <p class="display-6 mb-0 stat-value">{{ empleados_activos }}</p>
+          <small class="text-muted">Empleados con estado "activo"</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card shadow-sm stat-card stat-card-danger">
+        <div class="card-body">
+          <h5 class="card-title">Agregar empleado</h5>
+          <p class="mb-2 text-muted">Registrar un nuevo empleado en el sistema</p>
+          <a href="/control/crear/" class="btn btn-light text-danger fw-bold">Agregar empleado</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Últimas incidencias</h5>
+          <p class="text-muted">(Aquí se mostrará una lista de incidencias en futuras iteraciones)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
