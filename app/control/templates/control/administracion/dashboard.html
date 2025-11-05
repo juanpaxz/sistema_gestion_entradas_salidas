@@ -1,7 +1,9 @@
 {% extends 'control/base.html' %}
+
 {% load static %}
 
 {% block title %}Dashboard - Administrador{% endblock %}
+
 {% block extra_head %}
   <link rel="stylesheet" href="{% static 'control/css/dashboard.css' %}">
 {% endblock %}
@@ -10,8 +12,14 @@
 <div class="container">
   <div class="row mb-4">
     <div class="col-12">
-      <h2>Dashboard</h2>
-      <p class="text-muted">Resumen rápido del estado del sistema</p>
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <h2 class="mb-0">Dashboard</h2>
+          <p class="text-muted mb-0">Resumen rápido del estado del sistema</p>
+        </div>
+        <div><!-- button moved into Empleados card -->
+        </div>
+      </div>
     </div>
   </div>
 
@@ -41,7 +49,7 @@
         <div class="card-body">
           <h5 class="card-title">Agregar empleado</h5>
           <p class="mb-2 text-muted">Registrar un nuevo empleado en el sistema</p>
-          <a href="/control/crear/" class="btn btn-light text-danger fw-bold">Agregar empleado</a>
+          <a href="{% url 'control:crear' %}" class="btn btn-light text-danger fw-bold">Agregar empleado</a>
         </div>
       </div>
     </div>

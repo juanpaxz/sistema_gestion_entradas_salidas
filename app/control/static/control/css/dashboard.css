@@ -50,3 +50,30 @@ body.dark .stat-card-danger .card-body{
 }
 /* Button contrast on colored cards */
 .stat-card-danger .btn { border: 1px solid rgba(255,255,255,0.12); }
+
+/* Table / list adjustments for dark mode */
+body.dark .table {
+  color: #e6eef6;
+}
+body.dark .table thead th {
+  background-color: rgba(255,255,255,0.03) !important;
+  color: #d7f0ff !important;
+  border-color: rgba(255,255,255,0.06) !important;
+}
+body.dark .table-light {
+  background-color: rgba(255,255,255,0.02) !important;
+}
+body.dark .table tbody tr {
+  background: transparent;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+body.dark .table.table-hover tbody tr:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+/* Badges contrast in dark */
+body.dark .badge.bg-success { background-color: #1e7a3a !important; color: #fff !important; }
+body.dark .badge.bg-secondary { background-color: rgba(255,255,255,0.06) !important; color: #e6eef6 !important; }
+
+/* Card containing the table: ensure readable background */
+body.dark .card { background-color: #0b1220; border-color: rgba(255,255,255,0.04); }

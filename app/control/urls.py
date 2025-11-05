@@ -11,10 +11,10 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('dashboard/', views.dashboard, name='dashboard'),
     # Rutas para la gestión de empleados
-    #path('crear/', views.crear_empleado, name='crear'),
-    #path('<int:empleado_id>/', views.detalle_empleado, name='detalle'),
-    #path('<int:empleado_id>/editar/', views.editar_empleado, name='editar'),
-    #path('<int:empleado_id>/eliminar/', views.eliminar_empleado, name='eliminar'),
+    path('crear/', views.crear_empleado, name='crear'),
+    path('listar/', views.listar_empleados, name='listar'),
+    path('<int:empleado_id>/editar/', views.editar_empleado, name='editar'),
+    path('<int:empleado_id>/eliminar/', views.eliminar_empleado, name='eliminar'),
 
 ]
 

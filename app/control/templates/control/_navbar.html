@@ -1,68 +1,86 @@
 {% load group_tags %}
 <style>
-  /* Navbar custom theme using project palette */
+  /* Enhanced navbar styles using project palette variables */
   .navbar-custom {
     background: linear-gradient(90deg, var(--brand-primary) 0%, #5aa5d9 100%);
+    padding: .45rem 0;
   }
-  .navbar-custom .nav-link,
-  .navbar-custom .navbar-text {
-    color: rgba(255,255,255,0.95) !important;
+  .navbar-custom .container { display:flex; align-items:center; gap:1rem; }
+  .navbar-brand {
+    display:flex; align-items:center; gap:.6rem; color: #fff !important; font-weight:700;
   }
-  .navbar-custom .navbar-brand { color: #fff !important; font-weight:700; }
-  .navbar-custom .nav-link:hover { color: var(--brand-accent) !important; }
-  .navbar-custom .btn-outline-light { border-color: rgba(255,255,255,0.2); color: #fff; }
+  .brand-logo {
+    width:40px; height:40px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;
+    background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06)); color:#fff; font-weight:800; font-size:0.95rem;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  }
+  .navbar-custom .nav-link{
+    color: rgba(255,255,255,0.92) !important;
+    margin-left:.25rem; margin-right:.25rem;
+    padding:.35rem .6rem; border-radius:.35rem;
+    transition: background-color .15s ease, color .15s ease, transform .12s ease;
+  }
+  .navbar-custom .nav-link:hover, .navbar-custom .nav-link:focus {
+    color: var(--brand-accent) !important; background: rgba(255,255,255,0.06); transform: translateY(-1px);
+  }
+  .navbar-custom .nav-link.active { color: #052235; background: #fff; border-radius:.35rem; padding:.25rem .6rem; font-weight:700; box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
+  /* Add subtle vertical separators between nav items on desktop */
+  .navbar-nav.me-auto .nav-item + .nav-item .nav-link{
+    border-left: 1px solid rgba(255,255,255,0.06);
+    padding-left: .9rem;
+    margin-left: .5rem;
+  }
+  .navbar-custom .btn-outline-light { border-color: rgba(255,255,255,0.22); color: #fff; }
+  .nav-actions { display:flex; gap:.5rem; align-items:center; border-left: 1px solid rgba(255,255,255,0.10); padding-left: .7rem; margin-left: .6rem; }
+  .user-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(180deg,var(--bs-primary), #256a94); display:inline-flex; align-items:center; justify-content:center; color:#fff; font-weight:700; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+  .dropdown-menu-end { min-width:200px; }
+  /* Theme toggle styling */
+  #theme-toggle { width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); transition: background-color .15s ease, transform .12s ease; }
+  #theme-toggle:hover { background: rgba(255,255,255,0.10); transform: translateY(-2px); }
   @media (max-width: 767px){
     .navbar-custom .navbar-collapse { background: rgba(0,0,0,0.03); }
+    .nav-actions { gap:.25rem; }
+    /* Remove separators on small screens for cleaner layout */
+    .navbar-nav.me-auto .nav-item + .nav-item .nav-link{ border-left: none; padding-left: .4rem; margin-left: .2rem; }
+    .nav-actions { border-left: none; padding-left: 0; margin-left: 0; }
+    /* Slightly reduce navbar-brand spacing on small devices */
+    .navbar-brand { gap: .4rem; }
   }
 </style>
 
 <nav class="navbar navbar-expand-lg navbar-custom">
   <div class="container">
-    <a class="navbar-brand" href="/">Control Incidencias</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+    <a class="navbar-brand" href="/">
+      <span class="brand-logo">CI</span>
+      <span class="d-none d-md-inline">Control Incidencias</span>
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Alternar navegación">
       <span class="navbar-toggler-icon"></span>
     </button>
 
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
-        <li class="nav-item mx-1">
-          <a class="nav-link" href="/">Inicio</a>
-        </li>
         {% if user.is_authenticated %}
           {% if user|has_group:"administracion" %}
             <li class="nav-item mx-1">
               <a class="nav-link" href="{% url 'control:dashboard' %}">Dashboard</a>
             </li>
             <li class="nav-item mx-1">
-              <a class="nav-link" href="/admin/">Admin</a>
-            </li>
-            <li class="nav-item mx-1">
-              <a class="nav-link" href="/control/empleados/">Empleados</a>
-            </li>
-          {% elif user|has_group:"empleado" %}
-            <li class="nav-item mx-1">
-              <a class="nav-link" href="/control/mis-registros/">Mis registros</a>
-            </li>
-            <li class="nav-item mx-1">
-              <a class="nav-link" href="/control/subir-justificante/">Subir justificante</a>
-            </li>
-          {% else %}
-            <li class="nav-item mx-1">
-              <a class="nav-link" href="{% url 'control:dashboard' %}">Mi área</a>
+              <a class="nav-link" href="{% url 'control:listar' %}">Empleados</a>
             </li>
           {% endif %}
         {% endif %}
       </ul>
 
-      <ul class="navbar-nav ms-auto mb-2 mb-lg-0 d-flex align-items-center">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0 d-flex align-items-center nav-actions">
         {% if user.is_authenticated %}
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              {{ user.get_full_name|default:user.username }}
+            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="user-avatar me-2">{{ user.get_full_name|default:user.username|slice:":1"|upper }}</span>
+              <span class="d-none d-lg-inline">{{ user.get_full_name|default:user.username }}</span>
             </a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-              <li><a class="dropdown-item" href="{% url 'control:dashboard' %}">Mi panel</a></li>
-              <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item" href="{% url 'control:logout' %}">Cerrar sesión</a></li>
             </ul>
           </li>
