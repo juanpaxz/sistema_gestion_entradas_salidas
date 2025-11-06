@@ -1,9 +1,10 @@
 {% load group_tags %}
 <style>
-  /* Enhanced navbar styles using project palette variables */
+  /* Enhanced navbar styles using dark theme */
   .navbar-custom {
-    background: linear-gradient(90deg, var(--brand-primary) 0%, #5aa5d9 100%);
+    background: linear-gradient(90deg, #1a237e 0%, #283593 100%);
     padding: .45rem 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
   .navbar-custom .container { display:flex; align-items:center; gap:1rem; }
   .navbar-brand {
@@ -15,13 +16,16 @@
     box-shadow: 0 3px 10px rgba(0,0,0,0.08);
   }
   .navbar-custom .nav-link{
-    color: rgba(255,255,255,0.92) !important;
+     color: rgba(255,255,255,1) !important;
     margin-left:.25rem; margin-right:.25rem;
     padding:.35rem .6rem; border-radius:.35rem;
     transition: background-color .15s ease, color .15s ease, transform .12s ease;
   }
   .navbar-custom .nav-link:hover, .navbar-custom .nav-link:focus {
-    color: var(--brand-accent) !important; background: rgba(255,255,255,0.06); transform: translateY(-1px);
+     color: #fff !important;
+     background: rgba(255,255,255,0.15);
+     transform: translateY(-1px);
+     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
   .navbar-custom .nav-link.active { color: #052235; background: #fff; border-radius:.35rem; padding:.25rem .6rem; font-weight:700; box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
   /* Add subtle vertical separators between nav items on desktop */
@@ -68,6 +72,14 @@
             </li>
             <li class="nav-item mx-1">
               <a class="nav-link" href="{% url 'control:listar' %}">Empleados</a>
+            </li>
+            <li class="nav-item mx-1">
+              <a class="nav-link" href="{% url 'control:reporte_asistencias' %}">Reportes</a>
+            </li>
+          {% endif %}
+          {% if user|has_group:"empleado" %}
+            <li class="nav-item mx-1">
+              <a class="nav-link" href="{% url 'control:ver_asistencias' %}">Mis Asistencias</a>
             </li>
           {% endif %}
         {% endif %}

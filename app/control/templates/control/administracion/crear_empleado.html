@@ -26,46 +26,76 @@
               <div class="col-md-6">
                 <label class="form-label">Usuario</label>
                 {{ form.username }}
+                {% if form.username.errors %}
+                <div class="invalid-feedback d-block">{{ form.username.errors|join:", " }}</div>
+                {% endif %}
               </div>
               <div class="col-md-6">
                 <label class="form-label">Email</label>
                 {{ form.email }}
+                {% if form.email.errors %}
+                <div class="invalid-feedback d-block">{{ form.email.errors|join:", " }}</div>
+                {% endif %}
               </div>
 
               <div class="col-md-6">
                 <label class="form-label">Contraseña</label>
                 {{ form.password1 }}
+                {% if form.password1.errors %}
+                <div class="invalid-feedback d-block">{{ form.password1.errors|join:", " }}</div>
+                {% endif %}
               </div>
               <div class="col-md-6">
                 <label class="form-label">Confirmar contraseña</label>
                 {{ form.password2 }}
+                {% if form.password2.errors %}
+                <div class="invalid-feedback d-block">{{ form.password2.errors|join:", " }}</div>
+                {% endif %}
               </div>
 
               <div class="col-md-6">
                 <label class="form-label">Nombre</label>
                 {{ form.nombre }}
+                {% if form.nombre.errors %}
+                <div class="invalid-feedback d-block">{{ form.nombre.errors|join:", " }}</div>
+                {% endif %}
               </div>
               <div class="col-md-6">
                 <label class="form-label">Apellido</label>
                 {{ form.apellido }}
+                {% if form.apellido.errors %}
+                <div class="invalid-feedback d-block">{{ form.apellido.errors|join:", " }}</div>
+                {% endif %}
               </div>
 
               <div class="col-md-6">
                 <label class="form-label">Puesto</label>
                 {{ form.puesto }}
+                {% if form.puesto.errors %}
+                <div class="invalid-feedback d-block">{{ form.puesto.errors|join:", " }}</div>
+                {% endif %}
               </div>
               <div class="col-md-6">
                 <label class="form-label">Estado</label>
                 {{ form.estado }}
+                {% if form.estado.errors %}
+                <div class="invalid-feedback d-block">{{ form.estado.errors|join:", " }}</div>
+                {% endif %}
               </div>
 
               <div class="col-md-6">
                 <label class="form-label">RFC</label>
                 {{ form.rfc }}
+                {% if form.rfc.errors %}
+                <div class="invalid-feedback d-block">{{ form.rfc.errors|join:", " }}</div>
+                {% endif %}
               </div>
               <div class="col-md-6">
                 <label class="form-label">Huella biométrica (opcional)</label>
                 {{ form.huella_biometrica }}
+                {% if form.huella_biometrica.errors %}
+                <div class="invalid-feedback d-block">{{ form.huella_biometrica.errors|join:", " }}</div>
+                {% endif %}
               </div>
             </div>
 

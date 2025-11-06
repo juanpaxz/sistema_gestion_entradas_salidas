@@ -1,0 +1,46 @@
+{% extends 'control/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Historial de Asistencias</h2>
+
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Empleado</th>
+                    <th>Entrada</th>
+                    <th>Salida</th>
+                    <th>Estado</th>
+                    <th>Observaciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for asistencia in asistencias %}
+                <tr>
+                    <td>{{ asistencia.fecha|date:"d/m/Y" }}</td>
+                    <td>{{ asistencia.empleado }}</td>
+                    <td>{{ asistencia.hora_entrada|time:"H:i:s"|default:"-" }}</td>
+                    <td>{{ asistencia.hora_salida|time:"H:i:s"|default:"-" }}</td>
+                    <td>
+                        <span class="badge {% if asistencia.tipo == 'normal' %}bg-success
+                                         {% elif asistencia.tipo == 'retardo' %}bg-warning
+                                         {% elif asistencia.tipo == 'falta' %}bg-danger
+                                         {% else %}bg-info{% endif %}">
+                            {{ asistencia.tipo|title }}
+                        </span>
+                    </td>
+                    <td>{{ asistencia.observaciones|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">No hay registros de asistencia.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

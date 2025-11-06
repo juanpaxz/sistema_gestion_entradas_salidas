@@ -16,5 +16,11 @@ urlpatterns = [
     path('<int:empleado_id>/editar/', views.editar_empleado, name='editar'),
     path('<int:empleado_id>/eliminar/', views.eliminar_empleado, name='eliminar'),
 
+    # Rutas para el control de asistencia
+    path('asistencia/', views.registro_asistencia, name='registro_asistencia'),
+    path('asistencia/entrada/', views.registrar_entrada, name='registrar_entrada'),
+    path('asistencia/salida/', views.registrar_salida, name='registrar_salida'),
+    path('asistencia/historial/', views.ver_asistencias, name='ver_asistencias'),
+    path('asistencia/reporte/', views.reporte_asistencias, name='reporte_asistencias'),
 ]
 

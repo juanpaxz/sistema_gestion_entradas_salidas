@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import Empleado
+from django.core.exceptions import ValidationError
 
 
 class EmpleadoCreationForm(UserCreationForm):
@@ -40,6 +41,13 @@ class EmpleadoCreationForm(UserCreationForm):
             user.save()
         # Defer Empleado creation to view to keep responsibilities clear
         return user
+
+    def clean_rfc(self):
+        rfc = self.cleaned_data.get('rfc')
+        # If an Empleado with this RFC already exists, raise validation error
+        if rfc and Empleado.objects.filter(rfc__iexact=rfc).exists():
+            raise ValidationError('Ya existe un empleado con ese RFC.')
+        return rfc
 
 
 class EmpleadoForm(forms.ModelForm):

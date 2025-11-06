@@ -1,0 +1,97 @@
+{% extends 'control/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Reporte de Asistencias</h2>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                    <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" 
+                           value="{{ fecha_inicio|default:'' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                    <input type="date" class="form-control" id="fecha_fin" name="fecha_fin"
+                           value="{{ fecha_fin|default:'' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="empleado_id" class="form-label">Empleado</label>
+                    <select class="form-select" id="empleado_id" name="empleado_id">
+                        <option value="">Todos</option>
+                        {% for empleado in empleados %}
+                        <option value="{{ empleado.id }}" 
+                                {% if empleado.id|stringformat:"i" == empleado_id %}selected{% endif %}>
+                            {{ empleado }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="tipo" class="form-label">Tipo</label>
+                    <select class="form-select" id="tipo" name="tipo">
+                        <option value="">Todos</option>
+                        <option value="normal" {% if tipo == 'normal' %}selected{% endif %}>Normal</option>
+                        <option value="retardo" {% if tipo == 'retardo' %}selected{% endif %}>Retardo</option>
+                        <option value="falta" {% if tipo == 'falta' %}selected{% endif %}>Falta</option>
+                        <option value="justificada" {% if tipo == 'justificada' %}selected{% endif %}>Justificada</option>
+                    </select>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de resultados -->
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Empleado</th>
+                    <th>Entrada</th>
+                    <th>Salida</th>
+                    <th>Estado</th>
+                    <th>Observaciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for asistencia in asistencias %}
+                <tr>
+                    <td>{{ asistencia.fecha|date:"d/m/Y" }}</td>
+                    <td>{{ asistencia.empleado }}</td>
+                    <td>{{ asistencia.hora_entrada|time:"H:i:s"|default:"-" }}</td>
+                    <td>{{ asistencia.hora_salida|time:"H:i:s"|default:"-" }}</td>
+                    <td>
+                        <span class="badge {% if asistencia.tipo == 'normal' %}bg-success
+                                         {% elif asistencia.tipo == 'retardo' %}bg-warning
+                                         {% elif asistencia.tipo == 'falta' %}bg-danger
+                                         {% else %}bg-info{% endif %}">
+                            {{ asistencia.tipo|title }}
+                        </span>
+                    </td>
+                    <td>{{ asistencia.observaciones|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">No hay registros que coincidan con los filtros.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Botón de exportar -->
+    <div class="mt-3">
+        <a href="?{{ request.GET.urlencode }}&export=xlsx" class="btn btn-success">
+            Exportar a Excel
+        </a>
+    </div>
+</div>
+{% endblock %}
