@@ -14,12 +14,17 @@ class EmpleadoCreationForm(UserCreationForm):
         choices=[('activo', 'Activo'), ('inactivo', 'Inactivo')],
         initial='activo'
     )
+    role = forms.ChoiceField(
+        choices=[('empleado', 'Empleado'), ('administracion', 'Administrador')],
+        initial='empleado',
+        label='Rol'
+    )
     rfc = forms.CharField(max_length=13)
     huella_biometrica = forms.CharField(max_length=255, required=False)
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password1', 'password2', 'nombre', 'apellido', 'puesto', 'estado', 'rfc', 'huella_biometrica')
+        fields = ('username', 'email', 'password1', 'password2', 'nombre', 'apellido', 'puesto', 'estado', 'rfc', 'huella_biometrica', 'role')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

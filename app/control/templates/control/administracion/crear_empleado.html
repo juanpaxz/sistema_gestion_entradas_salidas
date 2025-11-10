@@ -84,6 +84,14 @@
               </div>
 
               <div class="col-md-6">
+                <label class="form-label">Rol</label>
+                {{ form.role }}
+                {% if form.role.errors %}
+                <div class="invalid-feedback d-block">{{ form.role.errors|join:", " }}</div>
+                {% endif %}
+              </div>
+
+              <div class="col-md-6">
                 <label class="form-label">RFC</label>
                 {{ form.rfc }}
                 {% if form.rfc.errors %}
@@ -100,7 +108,7 @@
             </div>
 
             <div class="mt-3 d-flex justify-content-between">
-              <a href="{% url 'control:dashboard' %}" class="btn btn-outline-secondary">Cancelar</a>
+              <a href="{% url 'control:admin_dashboard' %}" class="btn btn-outline-secondary">Cancelar</a>
               <button class="btn btn-primary" type="submit">Crear empleado</button>
             </div>
           </form>

@@ -5,33 +5,47 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.models import Group
 from django.utils import timezone
-from django.db.models import Q
+from django.contrib.auth.views import LoginView
 from django.db import IntegrityError
 from datetime import datetime, date
 import logging
-
+from .models import Empleado, Asistencia
+from .forms import EmpleadoCreationForm, EmpleadoForm
 # Configurar logger para la aplicación
 logger = logging.getLogger(__name__)
 
-from .models import Empleado, Asistencia
-from .forms import EmpleadoCreationForm, EmpleadoForm
+class CustomLoginView(LoginView):
+    template_name = 'control/login.html'
+    
+    def get_success_url(self):
+        user = self.request.user
+        
+        if user.groups.filter(name='administracion').exists():
+            return '/control/admin/dashboard/'
+        elif user.groups.filter(name='empleado').exists():
+            return '/control/empleado/dashboard/'
+        elif user.groups.filter(name='supervisores').exists():
+            return '/supervisores/panel/'
+        else:
+            return '/default/'  # Página por defecto
 
-
-@login_required
-def listar_empleados(request):
-    """Lista los empleados. Acceso solo para administradores."""
-    user = request.user
-    if not user.groups.filter(name='administracion').exists():
-        return HttpResponseForbidden('No tienes permiso para ver esta página')
-
-    empleados = Empleado.objects.select_related('user').all().order_by('nombre', 'apellido')
-    return render(request, 'control/administracion/listar_empleados.html', {'empleados': empleados})
-
+def es_administracion(user):
+    return user.groups.filter(name='administracion').exists()
 
 # Create your views here.
 def home(request):
     """Vista principal de la app `control` para verificar que la app responde."""
     return HttpResponse("Control app: funciona correctamente.")
+
+@login_required
+def listar_empleados(request):
+    """Lista los empleados. Acceso solo para administradores."""
+    user = request.user
+    if not es_administracion(user):
+        return HttpResponseForbidden('No tienes permiso para ver esta página')
+
+    empleados = Empleado.objects.select_related('user').all().order_by('nombre', 'apellido')
+    return render(request, 'control/administracion/listar_empleados.html', {'empleados': empleados})
 
 
 @login_required
@@ -43,7 +57,7 @@ def dashboard(request):
     """
     user = request.user
     # comprobar pertenencia al grupo administracion
-    if not user.groups.filter(name='administracion').exists():
+    if not es_administracion(user):
         return HttpResponseForbidden('No tienes permiso para ver esta página')
 
     total_empleados = Empleado.objects.count()
@@ -63,7 +77,7 @@ def crear_empleado(request):
     Solo usuarios del grupo 'administracion' pueden acceder a esta vista.
     """
     user = request.user
-    if not user.groups.filter(name='administracion').exists():
+    if not es_administracion(user):
         return HttpResponseForbidden('No tienes permiso para ver esta página')
 
     if request.method == 'POST':
@@ -86,17 +100,18 @@ def crear_empleado(request):
                 )
                 logger.info(f"Empleado creado exitosamente: {empleado.nombre} {empleado.apellido} (RFC: {empleado.rfc})")
                 
-                # Asignar al grupo 'empleado' si existe
+                # Asignar al grupo seleccionado en el formulario (role). Fallback a 'empleado'
+                selected_role = form.cleaned_data.get('role', 'empleado')
                 try:
-                    grupo = Group.objects.get(name='empleado')
+                    grupo = Group.objects.get(name=selected_role)
                     new_user.groups.add(grupo)
-                    logger.info(f"Usuario {new_user.username} añadido al grupo 'empleado'")
+                    logger.info(f"Usuario {new_user.username} añadido al grupo '{selected_role}'")
                 except Group.DoesNotExist:
-                    logger.warning("El grupo 'empleado' no existe en el sistema")
+                    logger.warning(f"El grupo '{selected_role}' no existe en el sistema")
                 
                 # Si todo fue exitoso, mostrar mensaje y redirigir
                 messages.success(request, f'Empleado {empleado.nombre} {empleado.apellido} creado correctamente')
-                return redirect('control:dashboard')
+                return redirect('control:admin_dashboard')
                     
             except IntegrityError as e:
                 logger.error(f"Error de integridad al crear empleado con RFC {form.cleaned_data.get('rfc')}: {str(e)}")
@@ -109,7 +124,7 @@ def crear_empleado(request):
                 messages.error(request, f'Ocurrió un error al crear el empleado: {str(e)}')
 
                 messages.success(request, 'Empleado creado correctamente.')
-                return redirect('control:dashboard')
+                return redirect('control:admin_dashboard')
     else:
         form = EmpleadoCreationForm()
 
@@ -120,7 +135,7 @@ def crear_empleado(request):
 def editar_empleado(request, empleado_id):
     """Editar los datos de un empleado existente."""
     user = request.user
-    if not user.groups.filter(name='administracion').exists():
+    if not es_administracion(user):
         return HttpResponseForbidden('No tienes permiso para ver esta página')
 
     empleado = get_object_or_404(Empleado, pk=empleado_id)
@@ -140,7 +155,7 @@ def editar_empleado(request, empleado_id):
 def eliminar_empleado(request, empleado_id):
     """Eliminar un empleado (confirma antes de borrar)."""
     user = request.user
-    if not user.groups.filter(name='administracion').exists():
+    if not es_administracion(user):
         return HttpResponseForbidden('No tienes permiso para ver esta página')
 
     empleado = get_object_or_404(Empleado, pk=empleado_id)
@@ -156,120 +171,107 @@ def eliminar_empleado(request, empleado_id):
     return render(request, 'control/administracion/confirm_delete_empleado.html', {'empleado': empleado})
 
 
-@login_required
 def registro_asistencia(request):
-    """Vista principal para el registro de asistencias."""
-    if not request.user.groups.filter(name='empleado').exists():
-        return HttpResponseForbidden('No tienes permiso para ver esta página')
+    """Vista completamente pública para el registro de asistencias."""
 
-    try:
-        empleado = Empleado.objects.get(user=request.user)
-        # Obtener o crear la asistencia de hoy
-        asistencia, _ = Asistencia.objects.get_or_create(
-            empleado=empleado,
-            fecha=date.today()
-        )
-
-        context = {
-            'asistencia': asistencia,
-            'empleado': empleado
-        }
-
-        return render(request, 'control/asistencias/registro.html', context)
-
-    except Empleado.DoesNotExist:
-        messages.error(request, 'No se encontró el registro de empleado asociado a tu usuario.')
-        return redirect('control:dashboard')
+    
+    return render(request, 'control/asistencias/registro.html')
 
 
-@login_required
 def registrar_entrada(request):
     """Registrar la entrada de un empleado."""
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)
 
+    # Priorizar RFC enviado en el POST (permitir kioscos/public access)
+    rfc = request.POST.get('rfc')
+    empleado = None
+
+    if rfc:
+        try:
+            empleado = Empleado.objects.get(rfc__iexact=rfc)
+        except Empleado.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'No se encontró empleado con ese RFC'}, status=404)
+
+    # Verificar si ya existe una asistencia para hoy
+    asistencia, created = Asistencia.objects.get_or_create(
+        empleado=empleado,
+        fecha=date.today()
+    )
+    if asistencia.hora_entrada:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Ya has registrado tu entrada hoy'
+        })
+
+    # Registrar la hora de entrada
+    asistencia.registrar_entrada()
+
+    # Verificar si es un retardo (puedes ajustar la hora límite según tus necesidades)
+    hora_actual = timezone.localtime(asistencia.hora_entrada).time()
+    hora_limite = datetime.strptime('09:00', '%H:%M').time()
+
+    if hora_actual > hora_limite:
+        asistencia.tipo = 'retardo'
+        asistencia.save()
+
+    return JsonResponse({
+        'status': 'success',
+        'message': 'Entrada registrada exitosamente',
+        # Mostrar la hora en la zona local del servidor
+        'hora': timezone.localtime(asistencia.hora_entrada).strftime('%H:%M:%S')
+    })
+
+
+def registrar_salida(request):
+    """Registrar la salida de un empleado."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)
+
+    # Priorizar RFC enviado en el POST
+    rfc = request.POST.get('rfc')
+    empleado = None
+
+    if rfc:
+        try:
+            empleado = Empleado.objects.get(rfc__iexact=rfc)
+        except Empleado.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'No se encontró empleado con ese RFC'}, status=404)
+
+    # Buscar la asistencia de hoy
     try:
-        empleado = Empleado.objects.get(user=request.user)
-        # Verificar si ya existe una asistencia para hoy
-        asistencia, created = Asistencia.objects.get_or_create(
+        asistencia = Asistencia.objects.get(
             empleado=empleado,
             fecha=date.today()
         )
 
-        if asistencia.hora_entrada:
+        if not asistencia.hora_entrada:
             return JsonResponse({
                 'status': 'error',
-                'message': 'Ya has registrado tu entrada hoy'
+                'message': 'Debes registrar primero tu entrada'
             })
 
-        # Registrar la hora de entrada
-        asistencia.registrar_entrada()
+        if asistencia.hora_salida:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Ya has registrado tu salida hoy'
+            })
 
-        # Verificar si es un retardo (puedes ajustar la hora límite según tus necesidades)
-        hora_actual = timezone.localtime(asistencia.hora_entrada).time()
-        hora_limite = datetime.strptime('09:00', '%H:%M').time()
-
-        if hora_actual > hora_limite:
-            asistencia.tipo = 'retardo'
-            asistencia.save()
+        # Registrar la hora de salida
+        asistencia.registrar_salida()
 
         return JsonResponse({
             'status': 'success',
-            'message': 'Entrada registrada exitosamente',
-            'hora': asistencia.hora_entrada.strftime('%H:%M:%S')
+            'message': 'Salida registrada exitosamente',
+            # Mostrar la hora en la zona local del servidor
+            'hora': timezone.localtime(asistencia.hora_salida).strftime('%H:%M:%S')
         })
 
-    except Empleado.DoesNotExist:
+    except Asistencia.DoesNotExist:
         return JsonResponse({
             'status': 'error',
-            'message': 'No se encontró el empleado'
-        }, status=404)
-
-
-@login_required
-def registrar_salida(request):
-    """Registrar la salida de un empleado."""
-    try:
-        empleado = Empleado.objects.get(user=request.user)
-        # Buscar la asistencia de hoy
-        try:
-            asistencia = Asistencia.objects.get(
-                empleado=empleado,
-                fecha=date.today()
-            )
-
-            if not asistencia.hora_entrada:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'Debes registrar primero tu entrada'
-                })
-
-            if asistencia.hora_salida:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'Ya has registrado tu salida hoy'
-                })
-
-            # Registrar la hora de salida
-            asistencia.registrar_salida()
-
-            return JsonResponse({
-                'status': 'success',
-                'message': 'Salida registrada exitosamente',
-                'hora': asistencia.hora_salida.strftime('%H:%M:%S')
-            })
-
-        except Asistencia.DoesNotExist:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'No se encontró registro de entrada para hoy'
-            })
-
-    except Empleado.DoesNotExist:
-        return JsonResponse({
-            'status': 'error',
-            'message': 'No se encontró el empleado'
-        }, status=404)
+            'message': 'No se encontró registro de entrada para hoy'
+        })
 
 
 @login_required
@@ -278,7 +280,7 @@ def ver_asistencias(request):
     user = request.user
 
     # Si es administrador, puede ver todas las asistencias
-    if user.groups.filter(name='administracion').exists():
+    if es_administracion(user):
         asistencias = Asistencia.objects.all().select_related('empleado')
     else:
         # Si es empleado, solo ve sus propias asistencias
