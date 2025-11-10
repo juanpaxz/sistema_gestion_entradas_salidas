@@ -10,7 +10,7 @@ from django.db import IntegrityError
 from datetime import datetime, date
 import logging
 from .models import Empleado, Asistencia
-from .forms import EmpleadoCreationForm, EmpleadoForm
+from .forms import EmpleadoCreationForm, EmpleadoForm, JustificanteRetardoForm
 # Configurar logger para la aplicación
 logger = logging.getLogger(__name__)
 
@@ -333,4 +333,40 @@ def reporte_asistencias(request):
         'fecha_fin': fecha_fin,
         'empleado_id': empleado_id,
         'tipo': tipo
+    })
+
+
+@login_required
+def subir_justificante(request, asistencia_id):
+    """Subir justificante PDF para un retardo."""
+    asistencia = get_object_or_404(Asistencia, pk=asistencia_id)
+    user = request.user
+    
+    # Validar que el empleado solo pueda subir justificantes para sus propias asistencias
+    try:
+        empleado = Empleado.objects.get(user=user)
+        if asistencia.empleado != empleado:
+            return HttpResponseForbidden('No tienes permiso para modificar este registro')
+    except Empleado.DoesNotExist:
+        return HttpResponseForbidden('No tienes acceso a esta página')
+    
+    # Validar que solo se puedan subir justificantes para retardos
+    if asistencia.tipo != 'retardo':
+        messages.error(request, 'Solo puedes subir justificantes para asistencias con retardo.')
+        return redirect('control:empleado_dashboard')
+    
+    if request.method == 'POST':
+        form = JustificanteRetardoForm(request.POST, request.FILES, instance=asistencia)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Justificante subido exitosamente.')
+            return redirect('control:empleado_dashboard')
+        else:
+            messages.error(request, 'Error al subir el justificante. Verifique el archivo.')
+    else:
+        form = JustificanteRetardoForm(instance=asistencia)
+    
+    return render(request, 'control/asistencias/subir_justificante.html', {
+        'form': form,
+        'asistencia': asistencia
     })

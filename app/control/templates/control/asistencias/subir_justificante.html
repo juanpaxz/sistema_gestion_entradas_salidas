@@ -1,0 +1,50 @@
+{% extends 'control/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">Subir Justificante de Retardo</h2>
+                    
+                    <div class="alert alert-info mb-4">
+                        <strong>Información:</strong>
+                        <ul class="mb-0">
+                            <li>Fecha: <strong>{{ asistencia.fecha|date:"d/m/Y" }}</strong></li>
+                            <li>Hora de entrada: <strong>{{ asistencia.hora_entrada|time:"H:i:s" }}</strong></li>
+                            <li>Solo se aceptan archivos PDF de máximo 10 MB</li>
+                        </ul>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.justificante_pdf.id_for_label }}" class="form-label">
+                                Justificante en PDF
+                            </label>
+                            {{ form.justificante_pdf }}
+                            {% if form.justificante_pdf.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.justificante_pdf.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload"></i> Subir Justificante
+                            </button>
+                            <a href="{% url 'control:empleado_dashboard' %}" class="btn btn-secondary">
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

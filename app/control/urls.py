@@ -24,4 +24,5 @@ urlpatterns = [
 
     # Dashboard específico para empleados (mapea al historial de asistencias)
     path('empleado/dashboard/', views.ver_asistencias, name='empleado_dashboard'),
+    path('asistencia/<int:asistencia_id>/subir-justificante/', views.subir_justificante, name='subir_justificante'),
 ]

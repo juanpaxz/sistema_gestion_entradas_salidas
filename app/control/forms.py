@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Empleado
+from .models import Empleado, Asistencia
 from django.core.exceptions import ValidationError
 
 
@@ -65,3 +65,29 @@ class EmpleadoForm(forms.ModelForm):
         for name, field in self.fields.items():
             css = field.widget.attrs.get('class', '')
             field.widget.attrs['class'] = (css + ' form-control').strip()
+
+
+class JustificanteRetardoForm(forms.ModelForm):
+    class Meta:
+        model = Asistencia
+        fields = ['justificante_pdf']
+        widgets = {
+            'justificante_pdf': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'application/pdf',
+            })
+        }
+        labels = {
+            'justificante_pdf': 'Justificante (PDF)'
+        }
+
+    def clean_justificante_pdf(self):
+        pdf = self.cleaned_data.get('justificante_pdf')
+        if pdf:
+            # Validar que sea un PDF
+            if not pdf.name.lower().endswith('.pdf'):
+                raise ValidationError('Solo se aceptan archivos PDF.')
+            # Validar tamaño (máximo 10 MB)
+            if pdf.size > 10 * 1024 * 1024:
+                raise ValidationError('El archivo no puede exceder 10 MB.')
+        return pdf

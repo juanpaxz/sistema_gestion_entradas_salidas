@@ -32,7 +32,7 @@ class Asistencia(models.Model):
     ]
     
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='normal')
-    observaciones = models.TextField(blank=True, null=True)
+    justificante_pdf = models.FileField(upload_to='justificantes/', blank=True, null=True)
 
     class Meta:
         unique_together = ['empleado', 'fecha']

@@ -14,7 +14,8 @@
                     <th>Entrada</th>
                     <th>Salida</th>
                     <th>Estado</th>
-                    <th>Observaciones</th>
+                    <th>Justificante</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -32,11 +33,26 @@
                             {{ asistencia.tipo|title }}
                         </span>
                     </td>
-                    <td>{{ asistencia.observaciones|default:"-" }}</td>
+                    <td>
+                        {% if asistencia.justificante_pdf %}
+                            <a href="{{ asistencia.justificante_pdf.url }}" target="_blank" class="btn btn-sm btn-success">
+                                <i class="fas fa-file-pdf"></i> Ver PDF
+                            </a>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if asistencia.tipo == 'retardo' and not asistencia.justificante_pdf %}
+                            <a href="{% url 'control:subir_justificante' asistencia.id %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-upload"></i> Subir justificante
+                            </a>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center">No hay registros de asistencia.</td>
+                    <td colspan="7" class="text-center">No hay registros de asistencia.</td>
                 </tr>
                 {% endfor %}
             </tbody>
