@@ -14,6 +14,8 @@ class Empleado(models.Model):
         default='activo'
     )
     rfc = models.CharField(max_length=13, unique=True)
+    # Horarios asignados al empleado (muchos a muchos -> un horario puede asignarse a varios empleados)
+    horarios = models.ManyToManyField('Horario', blank=True, related_name='empleados')
 
     def __str__(self):
         return f"{self.nombre} {self.apellido}"
@@ -50,3 +52,30 @@ class Asistencia(models.Model):
         if self.hora_entrada and not self.hora_salida:
             self.hora_salida = timezone.now()
             self.save()
+
+
+class Horario(models.Model):
+    """Modelo para definir horarios de trabajo reutilizables.
+
+    - dias_laborales: se guarda como cadena separada por comas (p.ej. 'Lunes,Martes')
+    - hora_entrada / hora_salida: horarios del día (TimeField)
+    """
+    DIAS_CHOICES = [
+        ('Lunes', 'Lunes'),
+        ('Martes', 'Martes'),
+        ('Miércoles', 'Miércoles'),
+        ('Jueves', 'Jueves'),
+        ('Viernes', 'Viernes'),
+        ('Sábado', 'Sábado'),
+        ('Domingo', 'Domingo'),
+    ]
+
+    nombre = models.CharField(max_length=100, blank=True, null=True, help_text='Nombre opcional para identificar el horario')
+    dias_laborales = models.CharField(max_length=100, help_text='Días laborales separados por comas (p.ej. Lunes,Martes)')
+    hora_entrada = models.TimeField()
+    hora_salida = models.TimeField()
+
+    def __str__(self):
+        if self.nombre:
+            return f"{self.nombre} ({self.dias_laborales})"
+        return f"Horario {self.pk} ({self.dias_laborales})"

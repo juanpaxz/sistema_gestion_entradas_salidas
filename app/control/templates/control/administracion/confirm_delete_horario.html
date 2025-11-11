@@ -1,0 +1,15 @@
+{% extends 'control/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <h2>Confirmar eliminación</h2>
+    <p>¿Seguro que deseas eliminar el horario <strong>{{ horario.nombre|default:horario.id }}</strong>?</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Eliminar</button>
+        <a href="{% url 'control:listar_horarios' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

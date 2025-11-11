@@ -54,7 +54,18 @@
 
 <nav class="navbar navbar-expand-lg navbar-custom">
   <div class="container">
-  <a class="navbar-brand" href="{% url 'control:admin_dashboard' %}">
+  {# Brand link: cambia según el rol del usuario #}
+  {% if user.is_authenticated %}
+    {% if user|has_group:"administracion" %}
+      <a class="navbar-brand" href="{% url 'control:admin_dashboard' %}">
+    {% elif user|has_group:"empleado" %}
+      <a class="navbar-brand" href="{% url 'control:empleado_dashboard' %}">
+    {% else %}
+      <a class="navbar-brand" href="{% url 'control:admin_dashboard' %}">
+    {% endif %}
+  {% else %}
+    <a class="navbar-brand" href="{% url 'control:login' %}">
+  {% endif %}
       <span class="brand-logo">CI</span>
       <span class="d-none d-md-inline">Control Incidencias</span>
     </a>
@@ -72,6 +83,9 @@
             </li>
             <li class="nav-item mx-1">
               <a class="nav-link" href="{% url 'control:reporte_asistencias' %}">Reportes</a>
+            </li>
+            <li class="nav-item mx-1">
+              <a class="nav-link" href="{% url 'control:listar_horarios' %}">Horarios</a>
             </li>
           {% endif %}
           {% if user|has_group:"empleado" %}

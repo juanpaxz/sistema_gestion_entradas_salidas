@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import Empleado, Asistencia
+from .models import Horario
 from django.core.exceptions import ValidationError
 
 
@@ -21,10 +22,13 @@ class EmpleadoCreationForm(UserCreationForm):
     )
     rfc = forms.CharField(max_length=13)
     huella_biometrica = forms.CharField(max_length=255, required=False)
+    horarios = forms.ModelMultipleChoiceField(queryset=Horario.objects.all(), required=False,
+                                              widget=forms.SelectMultiple(attrs={'class': 'form-control'}),
+                                              help_text='Asignar horarios a este empleado (opcional)')
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password1', 'password2', 'nombre', 'apellido', 'puesto', 'estado', 'rfc', 'huella_biometrica', 'role')
+        fields = ('username', 'email', 'password1', 'password2', 'nombre', 'apellido', 'puesto', 'estado', 'rfc', 'huella_biometrica', 'role', 'horarios')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -58,7 +62,7 @@ class EmpleadoCreationForm(UserCreationForm):
 class EmpleadoForm(forms.ModelForm):
     class Meta:
         model = Empleado
-        fields = ['nombre', 'apellido', 'puesto', 'estado', 'rfc', 'huella_biometrica']
+        fields = ['nombre', 'apellido', 'puesto', 'estado', 'rfc', 'huella_biometrica', 'horarios']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -91,3 +95,49 @@ class JustificanteRetardoForm(forms.ModelForm):
             if pdf.size > 10 * 1024 * 1024:
                 raise ValidationError('El archivo no puede exceder 10 MB.')
         return pdf
+
+
+class HorarioForm(forms.ModelForm):
+    # Mostrar días como múltiples opciones para facilitar la creación
+    DIAS = [
+        ('Lunes', 'Lunes'),
+        ('Martes', 'Martes'),
+        ('Miércoles', 'Miércoles'),
+        ('Jueves', 'Jueves'),
+        ('Viernes', 'Viernes'),
+        ('Sábado', 'Sábado'),
+        ('Domingo', 'Domingo'),
+    ]
+
+    dias = forms.MultipleChoiceField(choices=DIAS, widget=forms.CheckboxSelectMultiple, required=True, label='Días laborales')
+
+    class Meta:
+        model = Horario
+        fields = ['nombre', 'hora_entrada', 'hora_salida']
+        widgets = {
+            'hora_entrada': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'class': 'form-control'}),
+            'hora_salida': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'class': 'form-control'}),
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # If editing, populate the 'dias' field from the stored comma-separated value
+        if self.instance and self.instance.pk:
+            dias_val = self.instance.dias_laborales or ''
+            self.fields['dias'].initial = [d.strip() for d in dias_val.split(',') if d.strip()]
+
+    def clean(self):
+        cleaned = super().clean()
+        dias = cleaned.get('dias')
+        if not dias:
+            raise forms.ValidationError('Seleccione al menos un día laboral.')
+        return cleaned
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        dias = self.cleaned_data.get('dias', [])
+        instance.dias_laborales = ','.join(dias)
+        if commit:
+            instance.save()
+        return instance

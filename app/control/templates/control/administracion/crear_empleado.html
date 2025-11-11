@@ -105,6 +105,13 @@
                 <div class="invalid-feedback d-block">{{ form.huella_biometrica.errors|join:", " }}</div>
                 {% endif %}
               </div>
+              <div class="col-md-12">
+                <label class="form-label">Horarios (opcional)</label>
+                {{ form.horarios }}
+                {% if form.horarios.errors %}
+                <div class="invalid-feedback d-block">{{ form.horarios.errors|join:", " }}</div>
+                {% endif %}
+              </div>
             </div>
 
             <div class="mt-3 d-flex justify-content-between">

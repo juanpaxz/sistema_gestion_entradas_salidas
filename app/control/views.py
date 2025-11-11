@@ -9,8 +9,8 @@ from django.contrib.auth.views import LoginView
 from django.db import IntegrityError
 from datetime import datetime, date
 import logging
-from .models import Empleado, Asistencia
-from .forms import EmpleadoCreationForm, EmpleadoForm, JustificanteRetardoForm
+from .models import Empleado, Asistencia, Horario
+from .forms import EmpleadoCreationForm, EmpleadoForm, JustificanteRetardoForm, HorarioForm
 # Configurar logger para la aplicación
 logger = logging.getLogger(__name__)
 
@@ -98,6 +98,10 @@ def crear_empleado(request):
                     rfc=form.cleaned_data.get('rfc'),
                     huella_biometrica=form.cleaned_data.get('huella_biometrica') or None,
                 )
+                # Asignar horarios opcionales seleccionados en el formulario
+                horarios_selected = form.cleaned_data.get('horarios')
+                if horarios_selected:
+                    empleado.horarios.set(horarios_selected)
                 logger.info(f"Empleado creado exitosamente: {empleado.nombre} {empleado.apellido} (RFC: {empleado.rfc})")
                 
                 # Asignar al grupo seleccionado en el formulario (role). Fallback a 'empleado'
@@ -169,6 +173,69 @@ def eliminar_empleado(request, empleado_id):
         return redirect('control:listar')
 
     return render(request, 'control/administracion/confirm_delete_empleado.html', {'empleado': empleado})
+
+
+@login_required
+def listar_horarios(request):
+    """Lista los horarios -- acceso solo administradores."""
+    user = request.user
+    if not es_administracion(user):
+        return HttpResponseForbidden('No tienes permiso para ver esta página')
+
+    horarios = Horario.objects.all().order_by('nombre')
+    return render(request, 'control/administracion/horarios_list.html', {'horarios': horarios})
+
+
+@login_required
+def crear_horario(request):
+    user = request.user
+    if not es_administracion(user):
+        return HttpResponseForbidden('No tienes permiso para ver esta página')
+
+    if request.method == 'POST':
+        form = HorarioForm(request.POST)
+        if form.is_valid():
+            horario = form.save()
+            messages.success(request, 'Horario creado correctamente.')
+            return redirect('control:listar_horarios')
+    else:
+        form = HorarioForm()
+
+    return render(request, 'control/administracion/crear_horario.html', {'form': form})
+
+
+@login_required
+def editar_horario(request, horario_id):
+    user = request.user
+    if not es_administracion(user):
+        return HttpResponseForbidden('No tienes permiso para ver esta página')
+
+    horario = get_object_or_404(Horario, pk=horario_id)
+    if request.method == 'POST':
+        form = HorarioForm(request.POST, instance=horario)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Horario actualizado correctamente.')
+            return redirect('control:listar_horarios')
+    else:
+        form = HorarioForm(instance=horario)
+
+    return render(request, 'control/administracion/crear_horario.html', {'form': form, 'horario': horario})
+
+
+@login_required
+def eliminar_horario(request, horario_id):
+    user = request.user
+    if not es_administracion(user):
+        return HttpResponseForbidden('No tienes permiso para ver esta página')
+
+    horario = get_object_or_404(Horario, pk=horario_id)
+    if request.method == 'POST':
+        horario.delete()
+        messages.success(request, 'Horario eliminado correctamente.')
+        return redirect('control:listar_horarios')
+
+    return render(request, 'control/administracion/confirm_delete_horario.html', {'horario': horario})
 
 
 def registro_asistencia(request):
@@ -293,7 +360,7 @@ def ver_asistencias(request):
     # Ordenar por fecha descendente
     asistencias = asistencias.order_by('-fecha', '-hora_entrada')
 
-    return render(request, 'control/asistencias/historial.html', {
+    return render(request, 'control/asistencias/empleado_dashboard.html', {
         'asistencias': asistencias
     })
 
