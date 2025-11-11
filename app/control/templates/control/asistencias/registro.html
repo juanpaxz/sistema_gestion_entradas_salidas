@@ -1,37 +1,219 @@
-
 {% extends 'control/bootstrap_base.html' %}
 {% load static %}
 
+{% block title %}Registro de Asistencia{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'control/css/theme.css' %}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+
+    body {
+        /* Fondo por defecto (modo claro) */
+        background-color: #f4f7f6;
+        transition: background-color 0.3s ease;
+    }
+
+    /* Fondo para modo oscuro */
+    body.dark {
+        background-color: #0f1720;
+    }
+
+    .kiosk-container {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+    }
+
+    .brand-logo-lg {
+        width: 70px;
+        height: 70px;
+        font-size: 2rem;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--brand-primary), #1a237e);
+        color: #fff;
+        font-weight: 800;
+        box-shadow: 0 10px 25px rgba(45, 139, 210, 0.2);
+        margin-bottom: 1rem; 
+    }
+    
+    body.dark .brand-logo-lg {
+        background: linear-gradient(135deg, var(--brand-primary), #3a4b9a);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    }
+
+    /* Estilo del Reloj */
+    .clock-display {
+        margin-bottom: 1.5rem; 
+    }
+    
+    #current-time {
+        font-size: 4.5rem; 
+        font-weight: 700;
+        line-height: 1;
+        /* --- CAMBIO AQUÍ: Color solicitado para el reloj --- */
+        color: #283593;
+        letter-spacing: -2px;
+    }
+    
+    #current-date {
+        font-size: 1.5rem; 
+        font-weight: 300;
+        color: #555;
+    }
+
+    body.dark #current-time {
+        /* --- CAMBIO AQUÍ: Color solicitado para el reloj (modo oscuro) --- */
+        color: #283593;
+    }
+    body.dark #current-date {
+        color: rgba(230, 238, 246, 0.7);
+    }
+    
+    @media (max-width: 576px) {
+        #current-time { font-size: 3.5rem; }
+        #current-date { font-size: 1.15rem; }
+    }
+
+    /* Estilo del formulario de registro */
+    .register-form {
+        max-width: 360px; /* Más compacto */
+        width: 100%;
+        background-color: #fff;
+        padding: 1.5rem; 
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        border: 1px solid #e0e0e0;
+    }
+    
+    body.dark .register-form {
+        background-color: #0b1220;
+        border-color: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    
+    .register-form .form-label {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .register-form .form-control-lg {
+        text-align: center;
+        font-weight: 600;
+        letter-spacing: 1px;
+        background-color: #f4f7f6;
+        border-width: 2px;
+    }
+    
+    body.dark .register-form .form-control-lg {
+        background-color: #0f1720;
+        border-color: rgba(255, 255, 255, 0.15);
+        color: #fff;
+    }
+
+    .register-form .btn-lg {
+        padding-top: 0.7rem;
+        padding-bottom: 0.7rem;
+        font-size: 1.1rem; 
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+    }
+    
+    .btn-secondary {
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+    body.dark .btn-secondary {
+        background-color: #3a4a58;
+        border-color: #3a4a58;
+        color: #e6eef6;
+    }
+
+    /* Botón para cambiar tema */
+    #theme-toggle-btn {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1050;
+        width: 45px;
+        height: 45px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.5);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        color: #0f1720;
+        font-size: 1.25rem;
+        transition: all 0.15s ease;
+        backdrop-filter: blur(5px);
+    }
+    
+    body.dark #theme-toggle-btn {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #fff;
+    }
+    
+    /* --- NUEVA REGLA PARA EL BOTÓN DE ENTRADA --- */
+    #btn-entrada {
+        background-color: #283593 !important;
+        border-color: #283593 !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container py-4">
-    <div class="row">
-        <div class="col-md-6 mx-auto">
-            <div class="card">
-                <div class="card-body text-center">
-                    <h2 class="card-title mb-4">Registro de Asistencia</h2>
-                    
-                    <div class="clock-display mb-4">
-                        <h3 id="current-time" class="display-4"></h3>
-                        <p id="current-date" class="text-muted"></p>
-                    </div>
 
-                    <div class="d-grid gap-3">
-                        <div class="mb-3 text-start">
-                            <label for="rfc" class="form-label">RFC</label>
-                            <input id="rfc" name="rfc" class="form-control" placeholder="Ingrese RFC" {% if empleado %}value="{{ empleado.rfc }}"{% endif %} />
-                        </div>
-                        <button id="btn-entrada" class="btn btn-primary btn-lg">
-                            Registrar Entrada
-                        </button>   
-                        <button id="btn-salida" class="btn btn-secondary btn-lg">
-                            Registrar Salida
-                        </button>
-                    </div>
+<button id="theme-toggle" class="btn" title="Alternar tema" style="display:none;">🌙</button>
+<button id="theme-toggle-btn" title="Alternar tema">
+    <span>🌙</span>
+</button>
 
-                    <div id="mensaje" class="alert mt-3" style="display: none;"></div>
-                </div>
-            </div>
+
+<div class="kiosk-container">
+
+    <div class="brand-logo-lg">
+        CI
+    </div>
+
+    <div class="title" style="color: #283593; font-weight: 1000; font-size: 1.5rem; margin-bottom: 1rem;">
+        Escuela del Servicio Social
+    </div>
+
+    <div class="clock-display text-center">
+        <h1 id="current-time" class="display-1 fw-bold"></h1>
+        <p id="current-date" class="opacity-75"></p>
+    </div>
+
+    <div class="register-form">
+        <div class="mb-3 text-start">
+            <label for="rfc" class="form-label">RFC</label>
+            <input id="rfc" name="rfc" class="form-control form-control-lg" placeholder="Ingrese RFC" {% if empleado %}value="{{ empleado.rfc }}"{% endif %} />
         </div>
+        
+        <div class="d-grid gap-3 mt-3">
+            <button id="btn-entrada" class="btn btn-primary btn-lg">
+                <i class="bi bi-box-arrow-in-right"></i>
+                Registrar Entrada
+            </button>   
+            <button id="btn-salida" class="btn btn-secondary btn-lg">
+                <i class="bi bi-box-arrow-out-right"></i>
+                Registrar Salida
+            </button>
+        </div>
+
+        <div id="mensaje" class="alert mt-3" style="display: none; padding: 0.75rem 1rem; font-size: 0.9rem;"></div>
     </div>
 </div>
 
@@ -39,21 +221,28 @@
 
 {% block extra_js %}
 <script>
+    // --- LÓGICA DEL RELOJ ---
     function updateClock() {
         const now = new Date();
-        document.getElementById('current-time').textContent = now.toLocaleTimeString();
-        document.getElementById('current-date').textContent = now.toLocaleDateString();
+        const timeOpts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+        const dateOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        
+        document.getElementById('current-time').textContent = now.toLocaleTimeString('es-MX', timeOpts);
+        
+        // Capitalizar la primera letra del día
+        let dateString = now.toLocaleDateString('es-MX', dateOpts);
+        document.getElementById('current-date').textContent = dateString.charAt(0).toUpperCase() + dateString.slice(1);
     }
 
-    // Actualizar el reloj cada segundo
     setInterval(updateClock, 1000);
-    updateClock(); // Llamada inicial
+    updateClock();
 
+    // --- LÓGICA DE REGISTRO (FETCH) ---
     function mostrarMensaje(mensaje, tipo) {
         const alertDiv = document.getElementById('mensaje');
         alertDiv.textContent = mensaje;
         alertDiv.className = `alert alert-${tipo} mt-3`;
-        alertDiv.style.display = 'block';
+        alertDiv.style.cssText = "display: block; padding: 0.75rem 1rem; font-size: 0.9rem;";
     }
 
     document.getElementById('btn-entrada').addEventListener('click', function() {
@@ -76,11 +265,11 @@
             if (data.status === 'success') {
                 mostrarMensaje(`${data.message} - ${data.hora}`, 'success');
             } else {
-                mostrarMensaje(data.message, 'warning');
+                mostrarMensaje(data.message, 'danger');
             }
         })
         .catch(error => {
-            mostrarMensaje('Error al registrar entrada', 'danger');
+            mostrarMensaje('Error al registrar entrada: ' + error, 'danger');
         });
     });
 
@@ -104,12 +293,46 @@
             if (data.status === 'success') {
                 mostrarMensaje(`${data.message} - ${data.hora}`, 'success');
             } else {
-                mostrarMensaje(data.message, 'warning');
+                mostrarMensaje(data.message, 'danger');
             }
         })
         .catch(error => {
-            mostrarMensaje('Error al registrar salida', 'danger');
+            mostrarMensaje('Error al registrar salida: ' + error, 'danger');
         });
     });
+
+    // --- LÓGICA DE MODO OSCURO (copiada de base.html) ---
+    (function(){
+      const storageKey = 'theme';
+      const toggleBtn = document.getElementById('theme-toggle-btn');
+      const iconSpan = toggleBtn.querySelector('span');
+
+      function applyTheme(theme){
+        if(theme === 'dark'){
+          document.body.classList.add('dark');
+          if(iconSpan) iconSpan.innerHTML = '☀️';
+        } else {
+          document.body.classList.remove('dark');
+          if(iconSpan) iconSpan.innerHTML = '🌙';
+        }
+      }
+      
+      // init
+      let savedTheme = 'light';
+      try{
+        savedTheme = localStorage.getItem(storageKey) || 'light';
+        applyTheme(savedTheme);
+      }catch(e){ /* ignore */ }
+
+      // attach to toggle button
+      if(!toggleBtn) return;
+      
+      toggleBtn.addEventListener('click', function(e){
+          const isDark = document.body.classList.contains('dark');
+          const next = isDark ? 'light' : 'dark';
+          try{ localStorage.setItem(storageKey, next); }catch(err){}
+          applyTheme(next);
+      });
+    })();
 </script>
 {% endblock %}
