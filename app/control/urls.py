@@ -30,4 +30,9 @@ urlpatterns = [
     # Dashboard específico para empleados (mapea al historial de asistencias)
     path('empleado/dashboard/', views.ver_asistencias, name='empleado_dashboard'),
     path('asistencia/<int:asistencia_id>/subir-justificante/', views.subir_justificante, name='subir_justificante'),
+    
+    # Validación de justificantes (solo admin)
+    path('admin/justificantes/', views.validar_justificantes, name='validar_justificantes'),
+    path('admin/justificantes/<int:justificante_id>/aprobar/', views.aprobar_justificante, name='aprobar_justificante'),
+    path('admin/justificantes/<int:justificante_id>/rechazar/', views.rechazar_justificante, name='rechazar_justificante'),
 ]

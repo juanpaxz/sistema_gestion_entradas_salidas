@@ -9,7 +9,7 @@ from django.contrib.auth.views import LoginView
 from django.db import IntegrityError
 from datetime import datetime, date
 import logging
-from .models import Empleado, Asistencia, Horario
+from .models import Empleado, Asistencia, Horario, Justificante
 from .forms import EmpleadoCreationForm, EmpleadoForm, JustificanteRetardoForm, HorarioForm
 # Configurar logger para la aplicación
 logger = logging.getLogger(__name__)
@@ -421,19 +421,101 @@ def subir_justificante(request, asistencia_id):
     if asistencia.tipo != 'retardo':
         messages.error(request, 'Solo puedes subir justificantes para asistencias con retardo.')
         return redirect('control:empleado_dashboard')
-    
+
     if request.method == 'POST':
-        form = JustificanteRetardoForm(request.POST, request.FILES, instance=asistencia)
+        form = JustificanteRetardoForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Justificante subido exitosamente.')
+            justificante = form.save(commit=False)
+            justificante.empleado = asistencia.empleado
+            justificante.asistencia = asistencia
+            justificante.save()
+            messages.success(request, 'Justificante subido exitosamente y está pendiente de validación.')
             return redirect('control:empleado_dashboard')
         else:
             messages.error(request, 'Error al subir el justificante. Verifique el archivo.')
     else:
-        form = JustificanteRetardoForm(instance=asistencia)
-    
+        form = JustificanteRetardoForm()
+
     return render(request, 'control/asistencias/subir_justificante.html', {
         'form': form,
         'asistencia': asistencia
     })
+
+
+@login_required
+def validar_justificantes(request):
+    """Panel para que el administrador valide justificantes pendientes."""
+    if not es_administracion(request.user):
+        return HttpResponseForbidden('No tienes permiso para acceder a esta página')
+    
+    try:
+        # Obtener filtros
+        estado_filter = request.GET.get('estado', 'pendiente')
+        
+        # Obtener justificantes
+        justificantes = Justificante.objects.select_related('empleado', 'asistencia').order_by('-fecha_envio')
+        
+        if estado_filter:
+            justificantes = justificantes.filter(estado=estado_filter)
+        
+        # Contar por estado
+        stats = {
+            'pendiente': Justificante.objects.filter(estado='pendiente').count(),
+            'aprobado': Justificante.objects.filter(estado='aprobado').count(),
+            'rechazado': Justificante.objects.filter(estado='rechazado').count(),
+        }
+        
+        return render(request, 'control/admin/validar_justificantes.html', {
+            'justificantes': justificantes,
+            'estado_filter': estado_filter,
+            'stats': stats
+        })
+    except Exception as e:
+        logger.error(f"Error en validar_justificantes: {str(e)}")
+        messages.error(request, 'La tabla de justificantes aún no existe. Ejecuta las migraciones: python manage.py migrate')
+        return redirect('control:admin_dashboard')
+
+
+@login_required
+def aprobar_justificante(request, justificante_id):
+    """Aprobar un justificante."""
+    if not es_administracion(request.user):
+        return HttpResponseForbidden('No tienes permiso para realizar esta acción')
+    
+    justificante = get_object_or_404(Justificante, pk=justificante_id)
+    
+    if request.method == 'POST':
+        observacion = request.POST.get('observacion', '')
+        justificante.estado = 'aprobado'
+        justificante.observacion = observacion or 'Aprobado por administrador'
+        justificante.save()
+        messages.success(request, f'Justificante de {justificante.empleado.nombre} aprobado exitosamente.')
+        return redirect('control:validar_justificantes')
+    
+    return render(request, 'control/admin/detalle_justificante.html', {
+        'justificante': justificante,
+        'accion': 'aprobar'
+    })
+
+
+@login_required
+def rechazar_justificante(request, justificante_id):
+    """Rechazar un justificante."""
+    if not es_administracion(request.user):
+        return HttpResponseForbidden('No tienes permiso para realizar esta acción')
+    
+    justificante = get_object_or_404(Justificante, pk=justificante_id)
+    
+    if request.method == 'POST':
+        observacion = request.POST.get('observacion', 'Rechazado por administrador')
+        justificante.estado = 'rechazado'
+        justificante.observacion = observacion
+        justificante.save()
+        messages.warning(request, f'Justificante de {justificante.empleado.nombre} rechazado.')
+        return redirect('control:validar_justificantes')
+    
+    return render(request, 'control/admin/detalle_justificante.html', {
+        'justificante': justificante,
+        'accion': 'rechazar'
+    })
+

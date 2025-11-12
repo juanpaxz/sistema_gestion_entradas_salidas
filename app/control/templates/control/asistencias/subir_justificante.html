@@ -22,14 +22,22 @@
                         {% csrf_token %}
                         
                         <div class="mb-3">
-                            <label for="{{ form.justificante_pdf.id_for_label }}" class="form-label">
+                            <label for="{{ form.ruta_archivo.id_for_label }}" class="form-label">
                                 Justificante en PDF
                             </label>
-                            {{ form.justificante_pdf }}
-                            {% if form.justificante_pdf.errors %}
+                            {{ form.ruta_archivo }}
+                            {% if form.ruta_archivo.errors %}
                                 <div class="invalid-feedback d-block">
-                                    {{ form.justificante_pdf.errors.0 }}
+                                    {{ form.ruta_archivo.errors.0 }}
                                 </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.motivo.id_for_label }}" class="form-label">Motivo (opcional)</label>
+                            {{ form.motivo }}
+                            {% if form.motivo.errors %}
+                                <div class="invalid-feedback d-block">{{ form.motivo.errors.0 }}</div>
                             {% endif %}
                         </div>
 

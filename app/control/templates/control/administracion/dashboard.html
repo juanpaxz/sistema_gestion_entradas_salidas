@@ -53,6 +53,32 @@
   </div>
 
   <div class="row mt-4">
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">📋 Validar Justificantes</h5>
+          <p class="text-muted">Revisa y valida los justificantes de retardo que los empleados han subido.</p>
+          <a href="{% url 'control:validar_justificantes' %}" class="btn btn-warning">
+            Ir al Panel de Validación
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">📊 Reporte de Asistencias</h5>
+          <p class="text-muted">Consulta reportes detallados de asistencias y filtra por empleado, fecha y tipo.</p>
+          <a href="{% url 'control:reporte_asistencias' %}" class="btn btn-info">
+            Ver Reporte
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-4">
     <div class="col-12">
       <div class="card">
         <div class="card-body">

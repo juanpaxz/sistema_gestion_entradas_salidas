@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Empleado, Asistencia
+from .models import Empleado, Asistencia, Justificante
 from .models import Horario
 from django.core.exceptions import ValidationError
 
@@ -73,20 +73,22 @@ class EmpleadoForm(forms.ModelForm):
 
 class JustificanteRetardoForm(forms.ModelForm):
     class Meta:
-        model = Asistencia
-        fields = ['justificante_pdf']
+        model = Justificante
+        fields = ['ruta_archivo', 'motivo']
         widgets = {
-            'justificante_pdf': forms.FileInput(attrs={
+            'ruta_archivo': forms.FileInput(attrs={
                 'class': 'form-control',
                 'accept': 'application/pdf',
-            })
+            }),
+            'motivo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Motivo (opcional)'}),
         }
         labels = {
-            'justificante_pdf': 'Justificante (PDF)'
+            'ruta_archivo': 'Justificante (PDF)',
+            'motivo': 'Motivo'
         }
 
-    def clean_justificante_pdf(self):
-        pdf = self.cleaned_data.get('justificante_pdf')
+    def clean_ruta_archivo(self):
+        pdf = self.cleaned_data.get('ruta_archivo')
         if pdf:
             # Validar que sea un PDF
             if not pdf.name.lower().endswith('.pdf'):
@@ -94,6 +96,8 @@ class JustificanteRetardoForm(forms.ModelForm):
             # Validar tamaño (máximo 10 MB)
             if pdf.size > 10 * 1024 * 1024:
                 raise ValidationError('El archivo no puede exceder 10 MB.')
+        else:
+            raise ValidationError('Debes adjuntar un archivo PDF.')
         return pdf
 
 

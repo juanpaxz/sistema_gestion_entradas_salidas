@@ -24,8 +24,7 @@
                     <select class="form-select" id="empleado_id" name="empleado_id">
                         <option value="">Todos</option>
                         {% for empleado in empleados %}
-                        <option value="{{ empleado.id }}" 
-                                {% if empleado.id|stringformat:"i" == empleado_id %}selected{% endif %}>
+            <option value="{{ empleado.id }}" {% if empleado_id and empleado.id|stringformat:"s" == empleado_id %}selected{% endif %}>
                             {{ empleado }}
                         </option>
                         {% endfor %}
@@ -66,8 +65,20 @@
                 <tr>
                     <td>{{ asistencia.fecha|date:"d/m/Y" }}</td>
                     <td>{{ asistencia.empleado }}</td>
-                    <td>{{ asistencia.hora_entrada|time:"H:i:s"|default:"-" }}</td>
-                    <td>{{ asistencia.hora_salida|time:"H:i:s"|default:"-" }}</td>
+                    <td>
+                        {% if asistencia.hora_entrada %}
+                            {{ asistencia.hora_entrada|time:"H:i:s" }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if asistencia.hora_salida %}
+                            {{ asistencia.hora_salida|time:"H:i:s" }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
                     <td>
                         <span class="badge {% if asistencia.tipo == 'normal' %}bg-success
                                          {% elif asistencia.tipo == 'retardo' %}bg-warning

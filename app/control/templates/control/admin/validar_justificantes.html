@@ -1,0 +1,121 @@
+{% extends 'control/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Validación de Justificantes</h2>
+        <a href="{% url 'control:admin_dashboard' %}" class="btn btn-secondary">Volver</a>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Pendientes</h5>
+                    <p class="display-5">{{ stats.pendiente }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Aprobados</h5>
+                    <p class="display-5">{{ stats.aprobado }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Rechazados</h5>
+                    <p class="display-5">{{ stats.rechazado }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="btn-group" role="group">
+                <a href="?estado=pendiente" class="btn btn-outline-warning {% if estado_filter == 'pendiente' %}active{% endif %}">
+                    Pendientes
+                </a>
+                <a href="?estado=aprobado" class="btn btn-outline-success {% if estado_filter == 'aprobado' %}active{% endif %}">
+                    Aprobados
+                </a>
+                <a href="?estado=rechazado" class="btn btn-outline-danger {% if estado_filter == 'rechazado' %}active{% endif %}">
+                    Rechazados
+                </a>
+                <a href="?" class="btn btn-outline-secondary">
+                    Todos
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de justificantes -->
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Empleado</th>
+                    <th>Fecha Asistencia</th>
+                    <th>Tipo Asistencia</th>
+                    <th>Fecha Envío</th>
+                    <th>Motivo</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for justificante in justificantes %}
+                <tr>
+                    <td>
+                        <strong>{{ justificante.empleado.nombre }} {{ justificante.empleado.apellido }}</strong>
+                        <br>
+                        <small class="text-muted">{{ justificante.empleado.puesto }}</small>
+                    </td>
+                    <td>{{ justificante.asistencia.fecha|date:"d/m/Y" }}</td>
+                    <td>
+                        <span class="badge {% if justificante.asistencia.tipo == 'retardo' %}bg-warning{% endif %}">
+                            {{ justificante.asistencia.tipo|title }}
+                        </span>
+                    </td>
+                    <td>{{ justificante.fecha_envio|date:"d/m/Y H:i" }}</td>
+                    <td>{{ justificante.motivo|default:"-" }}</td>
+                    <td>
+                        <span class="badge 
+                            {% if justificante.estado == 'pendiente' %}bg-warning
+                            {% elif justificante.estado == 'aprobado' %}bg-success
+                            {% else %}bg-danger
+                            {% endif %}">
+                            {{ justificante.get_estado_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ justificante.ruta_archivo.url }}" target="_blank" class="btn btn-sm btn-info" title="Ver PDF">
+                            📄
+                        </a>
+                        <a href="{% url 'control:aprobar_justificante' justificante.id %}" class="btn btn-sm btn-success" title="Aprobar">
+                            ✓
+                        </a>
+                        <a href="{% url 'control:rechazar_justificante' justificante.id %}" class="btn btn-sm btn-danger" title="Rechazar">
+                            ✗
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted">
+                        No hay justificantes con ese estado.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

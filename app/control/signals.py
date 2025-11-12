@@ -9,6 +9,9 @@ problemas de orden.
 from django.db.models.signals import post_migrate
 from django.dispatch import receiver
 from django.apps import apps
+from django.db.models.signals import post_save
+from django.dispatch import receiver as receiver2
+from django.conf import settings
 
 
 @receiver(post_migrate)
@@ -28,4 +31,25 @@ def create_default_groups(sender, app_config, **kwargs):
 	grupos = ['administracion', 'empleado']
 	for nombre in grupos:
 		Group.objects.get_or_create(name=nombre)
+
+
+# Signal: cuando un Justificante es aprobado, marcar la Asistencia como 'justificada'
+@receiver2(post_save)
+def justificar_asistencia_on_approval(sender, instance, created, **kwargs):
+	"""Si un Justificante cambia a estado 'aprobado', actualizar la asistencia asociada.
+
+	Usamos apps.get_model para evitar importaciones directas que puedan causar ciclos
+	durante la carga de apps.
+	"""
+	# Evitar actuar sobre señales de otros modelos
+	if sender.__name__ != 'Justificante':
+		return
+
+	# Si el justificante está aprobado, actualizar la asistencia
+	if instance.estado == 'aprobado' and instance.asistencia:
+		asistencia = instance.asistencia
+		# Solo actualizar si no está ya justificada
+		if asistencia.tipo != 'justificada':
+			asistencia.tipo = 'justificada'
+			asistencia.save()
 

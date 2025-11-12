@@ -47,12 +47,10 @@
                     </td>
                     <td>
                         {% with justificante=asistencia.justificantes.first %}
-                            {% if asistencia.tipo == 'retardo' %}
-                                {% if not justificante or justificante.estado == 'rechazado' %}
-                                    <a href="{% url 'control:subir_justificante' asistencia.id %}" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-upload"></i> Subir justificante
-                                    </a>
-                                {% endif %}
+                            {% if asistencia.tipo == 'retardo' and (not justificante or justificante.estado == 'rechazado') %}
+                                <a href="{% url 'control:subir_justificante' asistencia.id %}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-upload"></i> Subir justificante
+                                </a>
                             {% endif %}
                         {% endwith %}
                     </td>

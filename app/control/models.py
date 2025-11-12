@@ -34,7 +34,7 @@ class Asistencia(models.Model):
     ]
     
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='normal')
-    justificante_pdf = models.FileField(upload_to='justificantes/', blank=True, null=True)
+    observaciones = models.TextField(blank=True, null=True)
 
     class Meta:
         unique_together = ['empleado', 'fecha']
@@ -52,6 +52,29 @@ class Asistencia(models.Model):
         if self.hora_entrada and not self.hora_salida:
             self.hora_salida = timezone.now()
             self.save()
+
+
+class Justificante(models.Model):
+    ESTADO_CHOICES = [
+        ('pendiente', 'Pendiente'),
+        ('aprobado', 'Aprobado'),
+        ('rechazado', 'Rechazado'),
+    ]
+
+    empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE, related_name='justificantes')
+    asistencia = models.ForeignKey(Asistencia, on_delete=models.CASCADE, related_name='justificantes')
+    fecha_envio = models.DateTimeField(auto_now_add=True)
+    motivo = models.CharField(max_length=255, blank=True, null=True)
+    archivo_url = models.URLField(blank=True, null=True, help_text='URL opcional del justificante')
+    ruta_archivo = models.FileField(upload_to='justificantes/', blank=True, null=True)
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
+    observacion = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['-fecha_envio']
+
+    def __str__(self):
+        return f"Justificante {self.pk} - {self.empleado} - {self.asistencia.fecha} ({self.estado})"
 
 
 class Horario(models.Model):

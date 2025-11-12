@@ -1,0 +1,96 @@
+{% extends 'control/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header {% if accion == 'aprobar' %}bg-success{% else %}bg-danger{% endif %} text-white">
+                    <h4 class="mb-0">
+                        {% if accion == 'aprobar' %}
+                            ✓ Aprobar Justificante
+                        {% else %}
+                            ✗ Rechazar Justificante
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Información del empleado y asistencia -->
+                    <div class="mb-4 p-3 bg-light rounded">
+                        <h5>Información del Empleado</h5>
+                        <p><strong>Nombre:</strong> {{ justificante.empleado.nombre }} {{ justificante.empleado.apellido }}</p>
+                        <p><strong>Puesto:</strong> {{ justificante.empleado.puesto }}</p>
+                        <p><strong>RFC:</strong> {{ justificante.empleado.rfc }}</p>
+                    </div>
+
+                    <div class="mb-4 p-3 bg-light rounded">
+                        <h5>Información de la Asistencia</h5>
+                        <p><strong>Fecha:</strong> {{ justificante.asistencia.fecha|date:"d/m/Y" }}</p>
+                        <p><strong>Tipo:</strong> {{ justificante.asistencia.tipo|title }}</p>
+                        {% if justificante.asistencia.hora_entrada %}
+                            <p><strong>Entrada:</strong> {{ justificante.asistencia.hora_entrada|time:"H:i:s" }}</p>
+                        {% endif %}
+                        {% if justificante.asistencia.hora_salida %}
+                            <p><strong>Salida:</strong> {{ justificante.asistencia.hora_salida|time:"H:i:s" }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4 p-3 bg-light rounded">
+                        <h5>Información del Justificante</h5>
+                        <p><strong>Fecha Envío:</strong> {{ justificante.fecha_envio|date:"d/m/Y H:i" }}</p>
+                        <p><strong>Motivo:</strong> {{ justificante.motivo|default:"-" }}</p>
+                        {% if justificante.ruta_archivo %}
+                            <p>
+                                <strong>Archivo PDF:</strong>
+                                <a href="{{ justificante.ruta_archivo.url }}" target="_blank" class="btn btn-sm btn-info">
+                                    📥 Descargar / Ver
+                                </a>
+                            </p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Formulario de acción -->
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="observacion" class="form-label">
+                                {% if accion == 'aprobar' %}
+                                    Observación (opcional)
+                                {% else %}
+                                    Motivo del Rechazo (requerido)
+                                {% endif %}
+                            </label>
+                            <textarea class="form-control" id="observacion" name="observacion" rows="4" 
+                                {% if accion == 'rechazar' %}required{% endif %}
+                                placeholder="{% if accion == 'aprobar' %}Agrega cualquier comentario...{% else %}Indica por qué rechazas este justificante...{% endif %}"></textarea>
+                        </div>
+
+                        <div class="alert alert-info" role="alert">
+                            <strong>Nota:</strong> 
+                            {% if accion == 'aprobar' %}
+                                Si apruebas este justificante, la asistencia del empleado será marcada como "Justificada".
+                            {% else %}
+                                Si rechazas este justificante, el empleado podrá subir otro. El estado de la asistencia permanecerá como "Retardo".
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-lg {% if accion == 'aprobar' %}btn-success{% else %}btn-danger{% endif %}">
+                                {% if accion == 'aprobar' %}
+                                    ✓ Aprobar
+                                {% else %}
+                                    ✗ Rechazar
+                                {% endif %}
+                            </button>
+                            <a href="{% url 'control:validar_justificantes' %}" class="btn btn-lg btn-secondary">
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
