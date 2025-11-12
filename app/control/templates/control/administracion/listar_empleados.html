@@ -3,10 +3,6 @@
 
 {% block title %}Lista de empleados{% endblock %}
 
-{% block extra_head %}
-<link rel="stylesheet" href="{% static 'control/css/dashboard.css' %}">
-{% endblock %}
-
 {% block content %}
 <div class="container">
   <div class="row mb-3 align-items-center">
@@ -25,7 +21,7 @@
         <div class="card-body p-0">
           <div class="table-responsive">
             <table class="table table-hover mb-0">
-              <thead class="table-light">
+              <thead class="table">
                 <tr>
                   <th>Usuario</th>
                   <th>Nombre</th>

@@ -1,79 +1,117 @@
-/* Dashboard color accents using project palette variables from base */
-.stat-card { border: none; overflow: hidden; border-radius: .75rem; transition: transform .18s ease, box-shadow .18s ease; }
-.stat-card:hover { transform: translateY(-6px); }
-.stat-card .card-body { padding: 1.5rem; position: relative; min-height:110px; }
-.stat-value { font-size: 2.25rem; line-height: 1; margin: .15rem 0 .35rem; font-weight: 600; }
-
-/* Primary (azul) */
-.stat-card-primary .card-body {
-  background: linear-gradient(90deg, var(--bs-primary) 0%, #5aa5d9 100%);
+.stat-card-primary {
+  /* darker, still rich blue */
+  background-image: linear-gradient(135deg, #04224b 0%, #0b5ed7 100%);
   color: #ffffff;
-  box-shadow: 0 8px 20px rgba(45,139,210,0.16);
+  border: none;
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+  will-change: transform, box-shadow;
 }
 
-/* Accent (amarillo) */
-.stat-card-accent .card-body {
-  background: linear-gradient(90deg, var(--brand-accent) 0%, #fff1a8 100%);
-  color: #052235; /* dark text for yellow */
-  box-shadow: 0 8px 20px rgba(255,233,92,0.12);
-}
-
-/* Danger (rojo) */
-.stat-card-danger .card-body {
-  background: linear-gradient(90deg, var(--bs-danger) 0%, #c63b3b 100%);
+.stat-card-primary .card-title,
+.stat-card-primary .stat-value,
+.stat-card-primary small {
   color: #ffffff;
-  box-shadow: 0 8px 20px rgba(198,59,59,0.14);
 }
 
-.stat-card .card-title { font-weight: 700; }
-.stat-card .display-6 { font-weight: 600; }
-
-/* Responsive tweaks */
-@media (max-width: 575px){
-  .stat-value { font-size: 1.6rem; }
-  .stat-card .card-body { min-height: 90px; }
+/* Improve contrast for inner links/buttons if any */
+.stat-card-primary a.btn {
+  background: rgba(255,255,255,0.15);
+  color: #ffffff;
+  border: 1px solid rgba(255,255,255,0.18);
 }
 
-/* Dark-mode variants: slightly desaturate and darken gradients for comfortable contrast */
-body.dark .stat-card-primary .card-body{
-  background: linear-gradient(90deg, #1e4f6f 0%, #2a6a90 100%);
-  box-shadow: 0 8px 18px rgba(0,0,0,0.55);
-}
-body.dark .stat-card-accent .card-body{
-  background: linear-gradient(90deg, #7a6b2a 0%, #9f8b3d 100%);
-  color: #f6f3de;
-  box-shadow: 0 8px 18px rgba(0,0,0,0.55);
-}
-body.dark .stat-card-danger .card-body{
-  background: linear-gradient(90deg, #7a2525 0%, #882b2b 100%);
-  box-shadow: 0 8px 18px rgba(0,0,0,0.55);
-}
-/* Button contrast on colored cards */
-.stat-card-danger .btn { border: 1px solid rgba(255,255,255,0.12); }
-
-/* Table / list adjustments for dark mode */
-body.dark .table {
-  color: #e6eef6;
-}
-body.dark .table thead th {
-  background-color: rgba(255,255,255,0.03) !important;
-  color: #d7f0ff !important;
-  border-color: rgba(255,255,255,0.06) !important;
-}
-body.dark .table-light {
-  background-color: rgba(255,255,255,0.02) !important;
-}
-body.dark .table tbody tr {
-  background: transparent;
-  border-bottom: 1px solid rgba(255,255,255,0.03);
-}
-body.dark .table.table-hover tbody tr:hover {
-  background: rgba(255,255,255,0.03);
+/* hover / focus effects for primary */
+.stat-card-primary:hover,
+.stat-card-primary:focus-within {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 36px rgba(4,34,75,0.35);
+  filter: saturate(1.08) brightness(1.02);
 }
 
-/* Badges contrast in dark */
-body.dark .badge.bg-success { background-color: #1e7a3a !important; color: #fff !important; }
-body.dark .badge.bg-secondary { background-color: rgba(255,255,255,0.06) !important; color: #e6eef6 !important; }
+.stat-card-green {
+  background-image: linear-gradient(135deg, #198754 0%, #63d69a 100%);
+  color: #ffffff;
+  border: none;
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
 
-/* Card containing the table: ensure readable background */
-body.dark .card { background-color: #0b1220; border-color: rgba(255,255,255,0.04); }
+.stat-card-green .card-title,
+.stat-card-green .stat-value,
+.stat-card-green small {
+    color: #ffffff;
+}
+/* Improve contrast for inner links/buttons if any */
+.stat-card-green a.btn {
+    background: rgba(255,255,255,0.15);
+    color: #ffffff;
+    border: 1px solid rgba(255,255,255,0.18);
+}   
+
+/* hover / focus effects for green */
+.stat-card-green:hover,
+.stat-card-green:focus-within {
+  transform: translateY(-6px);
+  box-shadow: 0 8px 30px rgba(25,135,84,0.18);
+  filter: saturate(1.05) brightness(1.02);
+}
+
+/* Tarjeta roja (danger) */
+.stat-card-danger {
+  background-image: linear-gradient(135deg, #dc3545 0%, #ff6b6b 100%);
+  color: #ffffff;
+  border: none;
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+.stat-card-danger .card-title,
+.stat-card-danger .stat-value,
+.stat-card-danger small {
+  color: #ffffff;
+}
+
+/* hover / focus effects for danger */
+.stat-card-danger:hover,
+.stat-card-danger:focus-within {
+  transform: translateY(-6px);
+  box-shadow: 0 8px 30px rgba(220,53,69,0.22);
+  filter: saturate(1.06) brightness(1.02);
+}
+
+/* small accessibility: focus outline for keyboard users */
+.stat-card-primary:focus-within,
+.stat-card-green:focus-within,
+.stat-card-danger:focus-within,
+.stat-card-warning:focus-within {
+  outline: 3px solid rgba(0,123,255,0.12);
+  outline-offset: 4px;
+}
+
+/* Dark theme - stronger global background */
+[data-bs-theme="dark"] body {
+  /* color: navy/charcoal — adjust hex as you prefer */
+  background-color: #061428; /* stronger, deep-blue/charcoal */
+  color: #e6eef8; /* light text for contrast */
+}
+
+/* Optional: make cards slightly elevated/darker on dark theme for contrast */
+[data-bs-theme="dark"] .card {
+  background-color: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Make footer match the navbar gradient */
+footer.footer {
+  background: linear-gradient(90deg, #1a237e 0%, #283593 100%);
+  color: #ffffff;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+
+footer.footer .text-muted {
+  color: rgba(255,255,255,0.9);
+}
+
+/* If theme is dark, ensure footer border-color subtle */
+[data-bs-theme="dark"] footer.footer {
+  border-top-color: rgba(255,255,255,0.04);
+}
+

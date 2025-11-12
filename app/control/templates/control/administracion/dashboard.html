@@ -4,10 +4,6 @@
 
 {% block title %}Dashboard - Administrador{% endblock %}
 
-{% block extra_head %}
-  <link rel="stylesheet" href="{% static 'control/css/dashboard.css' %}">
-{% endblock %}
-
 {% block content %}
 <div class="container">
   <div class="row mb-4">
@@ -24,6 +20,7 @@
   </div>
 
   <div class="row g-3">
+
     <div class="col-md-4">
       <div class="card shadow-sm stat-card stat-card-primary">
         <div class="card-body">
@@ -35,7 +32,7 @@
     </div>
 
     <div class="col-md-4">
-      <div class="card shadow-sm stat-card stat-card-accent">
+      <div class="card shadow-sm stat-card stat-card-green">
         <div class="card-body">
           <h5 class="card-title">Activos</h5>
           <p class="display-6 mb-0 stat-value">{{ empleados_activos }}</p>
