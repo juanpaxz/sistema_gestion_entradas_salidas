@@ -1,70 +1,253 @@
-
 {% extends 'control/bootstrap_base.html' %}
+{% load static %}
 
 {% block title %}Iniciar sesión{% endblock %}
 
-{% block content %}
-<div class="d-flex justify-content-center align-items-center" style="min-height:70vh;">
-  <div id="login-card" class="card shadow" style="width:420px; border-radius:12px; overflow:hidden;">
-    <div style="background:linear-gradient(90deg,var(--brand-primary),#000000); padding:18px 24px; color:rgb(20, 18, 24);">
-      <h4 class="mb-0">Control de Incidencias</h4>
-      <small class="text-muted">Acceso al sistema</small>
-    </div>
-    <div class="card-body p-4">
-      {% if form.non_field_errors %}
-        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-      {% endif %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'control/css/theme.css' %}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-      <form method="post" novalidate>
-        {% csrf_token %}
-        {% if next %}
-          <input type="hidden" name="next" value="{{ next }}">
-        {% elif request.GET.next %}
-          <input type="hidden" name="next" value="{{ request.GET.next }}">
+<style>  
+    body {
+        /* Fondo por defecto (modo claro) */
+        background-color: #f4f7f6;
+        transition: background-color 0.3s ease;
+    }
+
+    /* Fondo para modo oscuro */
+    body.dark {
+        background-color: #0f1720;
+    }
+
+    .kiosk-container {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+    }
+
+    /* Logo grande */
+    .brand-logo-lg {
+        width: 70px;
+        height: 70px;
+        font-size: 2rem;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--brand-primary), #1a237e);
+        color: #fff;
+        font-weight: 800;
+        box-shadow: 0 10px 25px rgba(45, 139, 210, 0.2);
+        margin-bottom: 1rem; 
+    }
+    
+    body.dark .brand-logo-lg {
+        background: linear-gradient(135deg, var(--brand-primary), #3a4b9a);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    }
+
+
+
+    body.dark #current-time {
+        color: #283593;
+    }
+    body.dark #current-date {
+        color: rgba(230, 238, 246, 0.7);
+    }
+    
+    @media (max-width: 576px) {
+        #current-time { font-size: 3.5rem; }
+        #current-date { font-size: 1.15rem; }
+    }
+
+    /* Estilo del formulario de login */
+    .login-form {
+        max-width: 420px; /* Ancho del login.html original */
+        width: 100%;
+        background-color: #fff;
+        padding: 2rem; /* Un poco más de espacio para los labels */
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        border: 1px solid #e0e0e0;
+    }
+    
+    body.dark .login-form {
+        background-color: #0b1220;
+        border-color: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    
+    .login-form .form-label {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    /* --- Estilos para los campos de Django --- */
+    .login-form input[type="text"],
+    .login-form input[type="password"] {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid #f4f7f6;
+        border-radius: 6px;
+        box-shadow: none;
+        outline: none;
+        transition: box-shadow .15s ease, border-color .15s ease;
+        font-size: 1rem;
+        line-height: 1.5;
+        background-color: #f4f7f6;
+    }
+    .login-form input:focus {
+        border-color: #283593;
+        box-shadow: 0 0 0 0.15rem rgba(40, 53, 147, 0.15);
+    }
+    body.dark .login-form input[type="text"],
+    body.dark .login-form input[type="password"] {
+        background-color: #0f1720;
+        border-color: rgba(255, 255, 255, 0.15);
+        color: #fff;
+    }
+    /* --- Fin estilos Django --- */
+
+    /* Botón de Ingresar con el color solicitado */
+    #btn-ingresar {
+        background-color: #283593 !important;
+        border-color: #283593 !important;
+        padding-top: 0.7rem;
+        padding-bottom: 0.7rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    /* Botón para cambiar tema */
+    #theme-toggle-btn {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1050;
+        width: 45px;
+        height: 45px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.5);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        color: #0f1720;
+        font-size: 1.25rem;
+        transition: all 0.15s ease;
+        backdrop-filter: blur(5px);
+    }
+    
+    body.dark #theme-toggle-btn {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<button id="theme-toggle" class="btn" title="Alternar tema" style="display:none;">🌙</button>
+<button id="theme-toggle-btn" title="Alternar tema">
+    <span>🌙</span>
+</button>
+
+<div class="kiosk-container">
+
+    <div class="brand-logo-lg">
+        CI
+    </div>
+
+    <div class="title" style="color: #283593; font-weight: 1000; font-size: 1.5rem; margin-bottom: 1rem;">
+        Escuela del Servicio Social
+    </div>
+
+    <div class="login-form">
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger" style="padding: 0.75rem 1rem; font-size: 0.9rem;">
+                {{ form.non_field_errors|striptags }}
+            </div>
         {% endif %}
 
-        <div class="mb-3">
-          <label for="{{ form.username.id_for_label }}" class="form-label">Usuario</label>
-          {{ form.username }}
-          {% if form.username.errors %}
-            <div class="text-danger small mt-1">{{ form.username.errors|striptags }}</div>
-          {% endif %}
-        </div>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% if next %}
+                <input type="hidden" name="next" value="{{ next }}">
+            {% elif request.GET.next %}
+                <input type="hidden" name="next" value="{{ request.GET.next }}">
+            {% endif %}
 
-        <div class="mb-3">
-          <label for="{{ form.password.id_for_label }}" class="form-label">Contraseña</label>
-          {{ form.password }}
-          {% if form.password.errors %}
-            <div class="text-danger small mt-1">{{ form.password.errors|striptags }}</div>
-          {% endif %}
-        </div>
-        
-        <button type="submit" class="btn btn-primary w-100 mb-2">Ingresar</button>
+            <div class="mb-3 text-start">
+                <label for="{{ form.username.id_for_label }}" class="form-label">Usuario</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <div class="text-danger small mt-1">{{ form.username.errors|striptags }}</div>
+                {% endif %}
+            </div>
 
-        <div class="text-center small text-muted">¿No tienes cuenta? Contacta al administrador.</div>
-      </form>
+            <div class="mb-3 text-start">
+                <label for="{{ form.password.id_for_label }}" class="form-label">Contraseña</label>
+                {{ form.password }}
+                {% if form.password.errors %}
+                    <div class="text-danger small mt-1">{{ form.password.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="d-grid gap-3 mt-4">
+                <button id="btn-ingresar" type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    Ingresar
+                </button>
+            </div>
+
+            <div class="text-center small text-muted mt-3">
+                ¿No tienes cuenta? Contacta al administrador.
+            </div>
+        </form>
     </div>
-  </div>
 </div>
 
-<style>
-  /* Style inputs generated by Django forms to look like Bootstrap form-control */
-  #login-card input[type="text"],
-  #login-card input[type="password"],
-  #login-card input[type="email"] {
-    width:100%;
-    padding:0.5rem 0.75rem;
-    border:1px solid #ddd;
-    border-radius:6px;
-    box-shadow:none;
-    outline:none;
-    transition:box-shadow .15s ease, border-color .15s ease;
-  }
-  #login-card input:focus{
-    border-color: var(--bs-primary);
-    box-shadow: 0 0 0 0.15rem rgba(45,139,210,0.15);
-  }
-  #login-card label.form-label{ font-weight:600; }
-  #login-card .card-body{ background: #fff; }
-</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+    // --- LÓGICA DE MODO OSCURO (copiada de base.html) ---
+    (function(){
+      const storageKey = 'theme';
+      const toggleBtn = document.getElementById('theme-toggle-btn');
+      const iconSpan = toggleBtn.querySelector('span');
+
+      function applyTheme(theme){
+        if(theme === 'dark'){
+          document.body.classList.add('dark');
+          if(iconSpan) iconSpan.innerHTML = '☀️';
+        } else {
+          document.body.classList.remove('dark');
+          if(iconSpan) iconSpan.innerHTML = '🌙';
+        }
+      }
+      
+      // init
+      let savedTheme = 'light';
+      try{
+        savedTheme = localStorage.getItem(storageKey) || 'light';
+        applyTheme(savedTheme);
+      }catch(e){ /* ignore */ }
+
+      // attach to toggle button
+      if(!toggleBtn) return;
+      
+      toggleBtn.addEventListener('click', function(e){
+          const isDark = document.body.classList.contains('dark');
+          const next = isDark ? 'light' : 'dark';
+          try{ localStorage.setItem(storageKey, next); }catch(err){}
+          applyTheme(next);
+      });
+    })();
+</script>
 {% endblock %}
