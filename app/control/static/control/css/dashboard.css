@@ -1,6 +1,6 @@
 .stat-card-primary {
-  /* darker, still rich blue */
-  background-image: linear-gradient(135deg, #04224b 0%, #0b5ed7 100%);
+  /* slightly lighter blue gradient */
+  background-image: linear-gradient(135deg, #0b5ed7 0%, #66b3ff 100%);
   color: #ffffff;
   border: none;
   transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
@@ -24,8 +24,8 @@
 .stat-card-primary:hover,
 .stat-card-primary:focus-within {
   transform: translateY(-6px);
-  box-shadow: 0 10px 36px rgba(4,34,75,0.35);
-  filter: saturate(1.08) brightness(1.02);
+  box-shadow: 0 10px 36px rgba(11,94,215,0.28);
+  filter: saturate(1.06) brightness(1.03);
 }
 
 .stat-card-green {
@@ -89,19 +89,19 @@
 /* Dark theme - stronger global background */
 [data-bs-theme="dark"] body {
   /* color: navy/charcoal — adjust hex as you prefer */
-  background-color: #061428; /* stronger, deep-blue/charcoal */
+  background-color: #20252a; /* stronger, deep-blue/charcoal */
   color: #e6eef8; /* light text for contrast */
 }
 
 /* Optional: make cards slightly elevated/darker on dark theme for contrast */
 [data-bs-theme="dark"] .card {
-  background-color: rgba(255,255,255,0.03);
+  background-color: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255,255,255,0.04);
 }
 
-/* Make footer match the navbar gradient */
+/* Make footer match the navbar gradient (use same blue gradient as navbar) */
 footer.footer {
-  background: linear-gradient(90deg, #1a237e 0%, #283593 100%);
+  background: linear-gradient(90deg, #0d6efd 0%, #4da3ff 100%);
   color: #ffffff;
   border-top: 1px solid rgba(0,0,0,0.08);
 }
@@ -114,4 +114,6 @@ footer.footer .text-muted {
 [data-bs-theme="dark"] footer.footer {
   border-top-color: rgba(255,255,255,0.04);
 }
+
+
 

@@ -1,0 +1,257 @@
+[
+  {
+    "model": "auth.user",
+    "pk": 1,
+    "fields": {
+      "username": "jlopez",
+      "first_name": "Juan",
+      "last_name": "Lopez",
+      "email": "juan.lopez@example.com",
+      "is_staff": true,
+      "is_active": true,
+      "is_superuser": false,
+      "password": "pbkdf2_sha256$260000$demo$zjB8K3z7bLB6PjkA8VMTFJx6fFY9PQ=="
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 2,
+    "fields": {
+      "username": "mmartinez",
+      "first_name": "Maria",
+      "last_name": "Martinez",
+      "email": "maria.martinez@example.com",
+      "is_staff": false,
+      "is_active": true,
+      "is_superuser": false,
+      "password": "pbkdf2_sha256$260000$demo$zjB8K3z7bLB6PjkA8VMTFJx6fFY9PQ=="
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 3,
+    "fields": {
+      "username": "cgarcia",
+      "first_name": "Carlos",
+      "last_name": "Garcia",
+      "email": "carlos.garcia@example.com",
+      "is_staff": false,
+      "is_active": true,
+      "is_superuser": false,
+      "password": "pbkdf2_sha256$260000$demo$zjB8K3z7bLB6PjkA8VMTFJx6fFY9PQ=="
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 4,
+    "fields": {
+      "username": "aramos",
+      "first_name": "Ana",
+      "last_name": "Ramos",
+      "email": "ana.ramos@example.com",
+      "is_staff": false,
+      "is_active": true,
+      "is_superuser": false,
+      "password": "pbkdf2_sha256$260000$demo$zjB8K3z7bLB6PjkA8VMTFJx6fFY9PQ=="
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 5,
+    "fields": {
+      "username": "dhernandez",
+      "first_name": "Diego",
+      "last_name": "Hernandez",
+      "email": "diego.hernandez@example.com",
+      "is_staff": false,
+      "is_active": true,
+      "is_superuser": false,
+      "password": "pbkdf2_sha256$260000$demo$zjB8K3z7bLB6PjkA8VMTFJx6fFY9PQ=="
+    }
+  },
+
+  {
+    "model": "control.Horario",
+    "pk": 1,
+    "fields": {
+      "nombre": "Turno Matutino",
+      "dias_laborales": "Lunes,Martes,Miércoles,Jueves,Viernes",
+      "hora_entrada": "07:00:00",
+      "hora_salida": "15:00:00"
+    }
+  },
+  {
+    "model": "control.Horario",
+    "pk": 2,
+    "fields": {
+      "nombre": "Turno Vespertino",
+      "dias_laborales": "Lunes,Martes,Miércoles,Jueves,Viernes",
+      "hora_entrada": "13:00:00",
+      "hora_salida": "21:00:00"
+    }
+  },
+  {
+    "model": "control.Horario",
+    "pk": 3,
+    "fields": {
+      "nombre": "Turno Nocturno",
+      "dias_laborales": "Lunes,Martes,Miércoles,Jueves,Viernes",
+      "hora_entrada": "22:00:00",
+      "hora_salida": "06:00:00"
+    }
+  },
+  {
+    "model": "control.Horario",
+    "pk": 4,
+    "fields": {
+      "nombre": "Fines de Semana",
+      "dias_laborales": "Sábado,Domingo",
+      "hora_entrada": "08:00:00",
+      "hora_salida": "14:00:00"
+    }
+  },
+
+  {
+    "model": "control.Empleado",
+    "pk": 1,
+    "fields": {
+      "user": 1,
+      "nombre": "Juan",
+      "apellido": "Lopez",
+      "puesto": "Administrador",
+      "huella_biometrica": null,
+      "estado": "activo",
+      "rfc": "LOPJ800101XYZ",
+      "horarios": [1]
+    }
+  },
+  {
+    "model": "control.Empleado",
+    "pk": 2,
+    "fields": {
+      "user": 2,
+      "nombre": "Maria",
+      "apellido": "Martinez",
+      "puesto": "Recepcionista",
+      "huella_biometrica": null,
+      "estado": "activo",
+      "rfc": "MARM850202ABC",
+      "horarios": [1, 4]
+    }
+  },
+  {
+    "model": "control.Empleado",
+    "pk": 3,
+    "fields": {
+      "user": 3,
+      "nombre": "Carlos",
+      "apellido": "Garcia",
+      "puesto": "Seguridad",
+      "huella_biometrica": null,
+      "estado": "activo",
+      "rfc": "GARC900303DEF",
+      "horarios": [3]
+    }
+  },
+  {
+    "model": "control.Empleado",
+    "pk": 4,
+    "fields": {
+      "user": 4,
+      "nombre": "Ana",
+      "apellido": "Ramos",
+      "puesto": "Limpieza",
+      "huella_biometrica": null,
+      "estado": "inactivo",
+      "rfc": "RAMA870404GHI",
+      "horarios": [2]
+    }
+  },
+  {
+    "model": "control.Empleado",
+    "pk": 5,
+    "fields": {
+      "user": 5,
+      "nombre": "Diego",
+      "apellido": "Hernandez",
+      "puesto": "Técnico",
+      "huella_biometrica": null,
+      "estado": "activo",
+      "rfc": "HEDI910505JKL",
+      "horarios": [1]
+    }
+  },
+
+  {
+    "model": "control.Asistencia",
+    "pk": 1,
+    "fields": {
+      "empleado": 1,
+      "fecha": "2025-11-10",
+      "hora_entrada": "2025-11-10T08:03:00Z",
+      "hora_salida": "2025-11-10T16:00:00Z",
+      "tipo": "retardo",
+      "observaciones": "Llegó 3 minutos tarde por tráfico."
+    }
+  },
+  {
+    "model": "control.Asistencia",
+    "pk": 2,
+    "fields": {
+      "empleado": 1,
+      "fecha": "2025-11-11",
+      "hora_entrada": "2025-11-11T07:59:00Z",
+      "hora_salida": "2025-11-11T16:00:00Z",
+      "tipo": "normal",
+      "observaciones": ""
+    }
+  },
+  {
+    "model": "control.Asistencia",
+    "pk": 3,
+    "fields": {
+      "empleado": 1,
+      "fecha": "2025-11-12",
+      "hora_entrada": null,
+      "hora_salida": null,
+      "tipo": "falta",
+      "observaciones": "Ausencia sin aviso."
+    }
+  },
+  {
+    "model": "control.Asistencia",
+    "pk": 4,
+    "fields": {
+      "empleado": 2,
+      "fecha": "2025-11-10",
+      "hora_entrada": "2025-11-10T07:50:00Z",
+      "hora_salida": "2025-11-10T15:45:00Z",
+      "tipo": "normal",
+      "observaciones": ""
+    }
+  },
+  {
+    "model": "control.Asistencia",
+    "pk": 5,
+    "fields": {
+      "empleado": 2,
+      "fecha": "2025-11-11",
+      "hora_entrada": "2025-11-11T08:20:00Z",
+      "hora_salida": "2025-11-11T16:00:00Z",
+      "tipo": "retardo",
+      "observaciones": "Tuvo cita médica antes del turno."
+    }
+  },
+  {
+    "model": "control.Asistencia",
+    "pk": 6,
+    "fields": {
+      "empleado": 2,
+      "fecha": "2025-11-12",
+      "hora_entrada": "2025-11-12T07:55:00Z",
+      "hora_salida": "2025-11-12T15:55:00Z",
+      "tipo": "normal",
+      "observaciones": ""
+    }
+  }
+]

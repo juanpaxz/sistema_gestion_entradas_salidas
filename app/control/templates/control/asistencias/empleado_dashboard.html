@@ -2,68 +2,108 @@
 {% load static %}
 
 {% block content %}
-<div class="container py-4">
-    <h2 class="mb-4">Historial de Asistencias</h2>
+<!-- FullCalendar (CDN) -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="{% static 'control/css/calendar.css' %}">
 
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Empleado</th>
-                    <th>Entrada</th>
-                    <th>Salida</th>
-                    <th>Estado</th>
-                    <th>Justificante</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for asistencia in asistencias %}
-                <tr>
-                    <td>{{ asistencia.fecha|date:"d/m/Y" }}</td>
-                    <td>{{ asistencia.empleado }}</td>
-                    <td>{{ asistencia.hora_entrada|time:"H:i:s"|default:"-" }}</td>
-                    <td>{{ asistencia.hora_salida|time:"H:i:s"|default:"-" }}</td>
-                    <td>
-                        <span class="badge {% if asistencia.tipo == 'normal' %}bg-success
-                                         {% elif asistencia.tipo == 'retardo' %}bg-warning
-                                         {% elif asistencia.tipo == 'falta' %}bg-danger
-                                         {% else %}bg-info{% endif %}">
-                            {{ asistencia.tipo|title }}
-                        </span>
-                    </td>
-                    <td>
-                        {% with justificante=asistencia.justificantes.first %}
-                            {% if justificante and justificante.ruta_archivo %}
-                                <a href="{{ justificante.ruta_archivo.url }}" target="_blank" class="btn btn-sm btn-success">
-                                    <i class="fas fa-file-pdf"></i> Ver PDF
-                                </a>
-                                <small class="d-block">Estado: {{ justificante.estado|title }}</small>
-                            {% else %}
-                                <span class="text-muted">-</span>
-                            {% endif %}
-                        {% endwith %}
-                    </td>
-                    <td>
-                        {% with justificante=asistencia.justificantes.first %}
-                            {% if asistencia.tipo == 'retardo' %}
-                                {% if not justificante or justificante.estado == 'rechazado' %}
-                                    <a href="{% url 'control:subir_justificante' asistencia.id %}" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-upload"></i> Subir justificante
-                                    </a>
-                                {% endif %}
-                            {% endif %}
-                        {% endwith %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="7" class="text-center">No hay registros de asistencia.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="container py-4">
+    <h2 class="mb-4">Calendario de Asistencias</h2>
+
+    {% if empleado %}
+    <div class="mb-3">
+      <h5>Tu horario asignado</h5>
+      {% if horario_para_hoy %}
+        <div class="card p-2 mb-2 border-primary">
+          <div class="d-flex justify-content-between">
+            <div>
+              <strong>{{ horario_para_hoy.nombre|default:'Horario' }}</strong>
+              <div class="small text-muted">{{ horario_para_hoy.dias_laborales }} — {{ horario_para_hoy.hora_entrada|time:"H:i" }} - {{ horario_para_hoy.hora_salida|time:"H:i" }}</div>
+            </div>
+            <div class="align-self-center"><span class="badge bg-primary">Aplica hoy</span></div>
+          </div>
+        </div>
+      {% else %}
+        <p class="text-muted">No tienes un horario aplicable para hoy.</p>
+      {% endif %}
     </div>
+    {% endif %}
+
+    <!-- Calendar container -->
+    <div id="calendar"></div>
+
+    <!-- Modal para mostrar detalles de la asistencia -->
+    <div class="modal fade" id="asistenciaModal" tabindex="-1" aria-labelledby="asistenciaModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="asistenciaModalLabel">Detalle de Asistencia</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <p><strong>Empleado:</strong> <span id="modal-empleado"></span></p>
+            <p><strong>Fecha:</strong> <span id="modal-fecha"></span></p>
+            <p><strong>Entrada:</strong> <span id="modal-entrada"></span></p>
+            <p><strong>Salida:</strong> <span id="modal-salida"></span></p>
+            <p><strong>Tipo:</strong> <span id="modal-tipo"></span></p>
+            <p><strong>Observaciones:</strong> <span id="modal-observaciones"></span></p>
+            <div id="modal-justificante" class="mt-2"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'es',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: ''
+      },
+            events: '{% url "control:asistencia_events" %}',
+            eventDidMount: function(info) {
+                // Tooltip breve (opcional)
+                info.el.title = info.event.title;
+            },
+            eventClick: function(info) {
+                var props = info.event.extendedProps || {};
+                // rellenar modal
+                document.getElementById('modal-empleado').textContent = props.empleado || '-';
+                // fecha -> usar start
+                var d = info.event.start;
+                document.getElementById('modal-fecha').textContent = d ? d.toLocaleDateString() : '-';
+                document.getElementById('modal-entrada').textContent = props.hora_entrada || '-';
+                document.getElementById('modal-salida').textContent = props.hora_salida || '-';
+                document.getElementById('modal-tipo').textContent = (props.tipo || '-').toString();
+                document.getElementById('modal-observaciones').textContent = props.observaciones || '-';
+
+                var justificanteDiv = document.getElementById('modal-justificante');
+                justificanteDiv.innerHTML = '';
+                if (props.justificante_url) {
+                    justificanteDiv.innerHTML = '<a href="' + props.justificante_url + '" target="_blank" class="btn btn-sm btn-success">Ver justificante</a>';
+                } else if (props.tipo === 'retardo') {
+                    // link para subir justificante (si el usuario es el empleado, la plantilla controlará permisos al acceder)
+                    justificanteDiv.innerHTML = '<a href="' + '/control/asistencia/' + props.asistencia_id + '/subir-justificante/' + '" class="btn btn-sm btn-primary">Subir justificante</a>';
+                }
+
+                // Mostrar modal (Bootstrap 5)
+                var myModal = new bootstrap.Modal(document.getElementById('asistenciaModal'));
+                myModal.show();
+            }
+        });
+
+        calendar.render();
+    });
+    </script>
+
 </div>
 {% endblock %}

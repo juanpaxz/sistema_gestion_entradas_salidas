@@ -274,9 +274,25 @@ def registrar_entrada(request):
     # Registrar la hora de entrada
     asistencia.registrar_entrada()
 
-    # Verificar si es un retardo (puedes ajustar la hora límite según tus necesidades)
+    # Verificar si es un retardo en base al horario asignado al empleado.
     hora_actual = timezone.localtime(asistencia.hora_entrada).time()
-    hora_limite = datetime.strptime('09:00', '%H:%M').time()
+
+    # Intentar obtener el empleado si no fue pasado por RFC (kiosk)
+    if empleado is None and request.user.is_authenticated:
+        try:
+            empleado = Empleado.objects.get(user=request.user)
+        except Empleado.DoesNotExist:
+            empleado = None
+
+    hora_limite = None
+    if empleado:
+        horario = empleado.get_horario_para_fecha()
+        if horario and horario.hora_entrada:
+            hora_limite = horario.hora_entrada
+
+    # Fallback a 09:00 si no hay horario asignado
+    if hora_limite is None:
+        hora_limite = datetime.strptime('07:30', '%H:%M').time()
 
     if hora_actual > hora_limite:
         asistencia.tipo = 'retardo'
@@ -354,15 +370,82 @@ def ver_asistencias(request):
         try:
             empleado = Empleado.objects.get(user=user)
             asistencias = Asistencia.objects.filter(empleado=empleado)
+            # Obtener el horario aplicable para la fecha actual
+            horario_para_hoy = empleado.get_horario_para_fecha()
         except Empleado.DoesNotExist:
             return HttpResponseForbidden('No tienes acceso a esta página')
 
     # Ordenar por fecha descendente
     asistencias = asistencias.order_by('-fecha', '-hora_entrada')
 
-    return render(request, 'control/asistencias/empleado_dashboard.html', {
-        'asistencias': asistencias
-    })
+    context = {
+        'asistencias': asistencias,
+    }
+    # Si se resolvió un empleado, incluir horarios en el contexto para la plantilla
+    if not es_administracion(user):
+        context.update({
+            'empleado': empleado,
+            'horario_para_hoy': horario_para_hoy,
+        })
+
+    return render(request, 'control/asistencias/empleado_dashboard.html', context)
+
+
+@login_required
+def asistencia_events(request):
+    """Devuelve eventos de asistencias en formato JSON para el calendario.
+
+    - Si el usuario es administrador y se pasa ?empleado_id=NN filtra por ese empleado.
+    - Si no es administrador, devuelve solo las asistencias del empleado asociado al user.
+    Cada evento contiene `extendedProps` con información necesaria para el modal.
+    """
+    user = request.user
+
+    # Base queryset
+    if es_administracion(user):
+        asistencias = Asistencia.objects.all().select_related('empleado')
+        empleado_id = request.GET.get('empleado_id')
+        if empleado_id:
+            asistencias = asistencias.filter(empleado_id=empleado_id)
+    else:
+        try:
+            empleado = Empleado.objects.get(user=user)
+            asistencias = Asistencia.objects.filter(empleado=empleado).select_related('empleado')
+        except Empleado.DoesNotExist:
+            return JsonResponse([], safe=False)
+
+    eventos = []
+    # Mapeo de colores según tipo
+    tipo_color = {
+        'normal': '#28a745',   # verde
+        'retardo': '#ffc107',   # amarillo
+        'falta': '#dc3545',     # rojo
+        'justificada': '#17a2b8' # cyan/azul
+    }
+
+    for a in asistencias:
+        color = tipo_color.get(a.tipo, '#6c757d')
+        title = a.tipo.title() if not es_administracion(user) else f"{a.empleado.nombre} {a.empleado.apellido} - {a.tipo.title()}"
+
+        eventos.append({
+            'id': a.id,
+            'title': title,
+            'start': a.fecha.isoformat(),
+            'allDay': True,
+            'backgroundColor': color,
+            'borderColor': color,
+            'extendedProps': {
+                'empleado': str(a.empleado) if a.empleado else None,
+                'hora_entrada': timezone.localtime(a.hora_entrada).strftime('%H:%M:%S') if a.hora_entrada else None,
+                'hora_salida': timezone.localtime(a.hora_salida).strftime('%H:%M:%S') if a.hora_salida else None,
+                'tipo': a.tipo,
+                'observaciones': a.observaciones,
+                'justificante_url': a.justificantes.first().ruta_archivo.url if a.justificantes.exists() and a.justificantes.first().ruta_archivo else None,
+                'asistencia_id': a.id
+            }
+        })
+
+    return JsonResponse(eventos, safe=False)
 
 
 @login_required

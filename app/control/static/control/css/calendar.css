@@ -1,0 +1,128 @@
+/* ===== FULLCALENDAR - LIGHT-FIRST DESIGN (with dark fallback) ===== */
+
+/* Base font */
+.fc { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+
+/* Calendar container */
+#calendar {
+	max-width: 1200px;
+	margin: 18px auto;
+	background: linear-gradient(180deg,#ffffff 0%, #fbfdff 100%);
+	border: 2px solid rgba(11,94,215,0.12); /* stronger border to distinguish */
+	border-radius: 14px;
+	padding: 20px;
+	box-shadow: 0 10px 35px rgba(11,94,215,0.06);
+	transition: all .25s ease;
+}
+
+/* Ensure borders/paddings are included in width calculations to avoid overflow */
+#calendar, #calendar * { box-sizing: border-box; }
+
+/* Make day grid table use fixed layout so 7 columns always fit evenly */
+.fc .fc-daygrid-body table {
+	table-layout: fixed;
+	width: 100%;
+	border-collapse: collapse;
+}
+
+/* Each day column takes ~1/7 of the width (month view) */
+.fc .fc-daygrid-day {
+	width: calc(100% / 7);
+}
+
+/* Column headers match the column widths */
+.fc .fc-col-header-cell {
+	width: calc(100% / 7);
+}
+
+/* If the viewport is narrower, allow horizontal scroll inside the calendar rather than clipping */
+#calendar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+@media (max-width: 768px){
+	#calendar { padding: 12px; margin: 14px auto; }
+}
+
+/* ===== LIGHT THEME (primary focus for high contrast) ===== */
+
+/* Toolbar */
+.fc .fc-toolbar-title { font-weight:700; font-size:1.45rem; color:#072341; }
+.fc .fc-toolbar .fc-button {
+	background:#ffffff; border:1px solid #d1d5db; color:#1f2937; padding:.45rem .9rem; border-radius:10px; box-shadow: 0 2px 8px rgba(16,24,40,0.03);
+}
+.fc .fc-toolbar .fc-button:hover{ background:#f8fafc; transform:translateY(-2px); }
+.fc .fc-toolbar .fc-button.fc-button-primary, .fc .fc-toolbar .fc-button-today{
+	background: linear-gradient(135deg,#0b5ed7 0%, #4da3ff 100%); border:1px solid #0b5ed7; color:#fff; box-shadow:0 6px 18px rgba(11,94,215,0.14);
+}
+
+/* Column headers */
+.fc .fc-col-header-cell { background: linear-gradient(180deg,#f1f6ff 0%,#eef6ff 100%); border-bottom:2px solid rgba(11,94,215,0.10); padding:10px 6px; }
+.fc .fc-col-header-cell-cushion { color:#0b3a66; font-weight:700; letter-spacing:.02em; }
+
+/* Grid cells */
+.fc .fc-daygrid-day-frame { min-height:110px; border-radius:8px; overflow:visible; }
+.fc .fc-daygrid-day { background:transparent; border-right:1px solid rgba(11,94,215,0.06); border-bottom:1px solid rgba(11,94,215,0.06); padding:6px; }
+.fc .fc-daygrid-day:hover { background: linear-gradient(180deg,#f8fbff, #ffffff); }
+.fc .fc-daygrid-day-number { color:#0b2a45; font-weight:700; padding:4px 6px; font-size:.95rem; }
+
+/* Today marker (subtle but visible) */
+.fc .fc-daygrid-day.fc-day-today { position:relative; }
+.fc .fc-daygrid-day.fc-day-today::after{
+	content:''; position:absolute; inset:6px; border-radius:8px; pointer-events:none;
+	border:2px solid rgba(11,94,215,0.12); box-shadow:0 6px 18px rgba(11,94,215,0.06) inset;
+	z-index:0;
+}
+.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number{ color:#0b5ed7; }
+
+/* Weekend subtle background */
+.fc .fc-day-sat, .fc .fc-day-sun { background: linear-gradient(180deg,#fffaf6, #ffffff); }
+.fc .fc-day-sat .fc-daygrid-day-number, .fc .fc-day-sun .fc-daygrid-day-number { color:#9b3412; }
+
+/* Events - clear, punchy and accessible */
+.fc .fc-daygrid-event { display:block; margin:6px 6px 4px; padding:8px 10px; border-radius:10px; box-shadow:0 6px 18px rgba(9,30,66,0.06); color:#fff; font-weight:600; position:relative; z-index:3; }
+.fc .fc-daygrid-event:hover { transform:translateY(-3px); box-shadow:0 10px 26px rgba(9,30,66,0.08); }
+.fc .fc-daygrid-event .fc-event-main { color:inherit; }
+/* Event color variants (light) */
+
+/* Ensure event dot not shown and main text readable */
+.fc .fc-daygrid-event .fc-event-dot{ display:none; }
+
+/* Accessibility: focus states */
+.fc .fc-button:focus{ outline:3px solid rgba(11,94,215,0.18); outline-offset:3px; }
+
+/* Responsiveness */
+@media (max-width:768px){
+	.fc .fc-daygrid-day-frame{ min-height:80px; }
+	.fc .fc-daygrid-event{ font-size:.78rem; padding:6px 8px; }
+	.fc .fc-col-header-cell-cushion{ font-size:.86rem; }
+}
+
+/* ===== DARK THEME FALLBACK (keeps previous midnight neon if present) ===== */
+[data-bs-theme="dark"] #calendar{ background:#0f172a; border:1px solid #1e293b; box-shadow:0 8px 34px rgba(2,6,23,0.6); }
+[data-bs-theme="dark"] .fc .fc-toolbar-title{ color:#e6eefc; text-shadow:0 0 8px rgba(99,102,241,0.36); }
+[data-bs-theme="dark"] .fc .fc-toolbar .fc-button{ background:#111827; border:1px solid #374151; color:#d1d5db; }
+[data-bs-theme="dark"] .fc .fc-toolbar .fc-button.fc-button-primary, [data-bs-theme="dark"] .fc .fc-toolbar .fc-button-today{ background:linear-gradient(135deg,#4f46e5, #3b82f6); box-shadow:0 6px 18px rgba(79,70,229,0.18); color:#fff; }
+[data-bs-theme="dark"] .fc .fc-daygrid-day{ background:transparent; border-right:1px solid #0b1220; border-bottom:1px solid #0b1220; }
+[data-bs-theme="dark"] .fc .fc-daygrid-day-number{ color:#e6eefc; }
+[data-bs-theme="dark"] .fc .fc-daygrid-day.fc-day-today::after{ border:1px solid rgba(99,102,241,0.28); box-shadow: 0 6px 18px rgba(3,6,23,0.6) inset; }
+[data-bs-theme="dark"] .fc .fc-daygrid-event{ box-shadow:0 6px 20px rgba(2,6,23,0.5); z-index:3; }
+[data-bs-theme="dark"] .fc .fc-daygrid-event:hover{ box-shadow:0 10px 26px rgba(2,6,23,0.7); }
+
+/* Dark: highlight the column header row (days) to be visually distinct */
+[data-bs-theme="dark"] .fc .fc-col-header-cell {
+	background: linear-gradient(180deg, #0b1020 0%, #24143f 100%);
+	border-bottom: 3px solid rgba(99,102,241,0.28);
+	position: sticky;
+	box-shadow: 0 6px 18px rgba(2,6,23,0.6) inset;
+}
+
+[data-bs-theme="dark"] .fc .fc-col-header-cell-cushion {
+	color: #e6eefc;
+	text-transform: uppercase;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	font-size: 0.95rem;
+}
+
+[data-bs-theme="dark"] .fc .fc-col-header-container { z-index: 5; }
+
+

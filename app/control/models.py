@@ -20,6 +20,38 @@ class Empleado(models.Model):
     def __str__(self):
         return f"{self.nombre} {self.apellido}"
 
+    def get_horario_para_fecha(self, fecha=None):
+        """
+        Devuelve el objeto Horario aplicable para la fecha dada (por defecto hoy).
+        Busca entre los horarios asignados al empleado aquel(s) que contienen
+        el día de la semana en su campo `dias_laborales` (cadena separada por comas).
+        Si hay varios, devuelve el que tenga la hora_entrada más temprana.
+        Si no hay ninguno, devuelve None.
+        """
+        from datetime import date as _date
+
+        if fecha is None:
+            fecha = _date.today()
+
+        # Mapear weekday() (0=Lunes) a nombres en español usados en dias_laborales
+        weekday_map = {
+            0: 'Lunes', 1: 'Martes', 2: 'Miércoles', 3: 'Jueves', 4: 'Viernes', 5: 'Sábado', 6: 'Domingo'
+        }
+        nombre_dia = weekday_map[fecha.weekday()]
+
+        candidatos = []
+        for h in self.horarios.all():
+            # dias_laborales se espera como 'Lunes,Martes' etc.
+            dias = [d.strip() for d in (h.dias_laborales or '').split(',') if d.strip()]
+            if nombre_dia in dias:
+                candidatos.append(h)
+
+        if not candidatos:
+            return None
+
+        # devolver horario con hora_entrada mínima (por si hay varios)
+        return min(candidatos, key=lambda x: x.hora_entrada)
+
 class Asistencia(models.Model):
     empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE, related_name='asistencias')
     fecha = models.DateField(default=timezone.now)

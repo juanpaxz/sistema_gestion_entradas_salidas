@@ -28,6 +28,7 @@ urlpatterns = [
     path('horarios/<int:horario_id>/eliminar/', views.eliminar_horario, name='eliminar_horario'),
 
     # Dashboard específico para empleados (mapea al historial de asistencias)
+    path('empleado/events/', views.asistencia_events, name='asistencia_events'),
     path('empleado/dashboard/', views.ver_asistencias, name='empleado_dashboard'),
     path('asistencia/<int:asistencia_id>/subir-justificante/', views.subir_justificante, name='subir_justificante'),
     
