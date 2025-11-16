@@ -11,6 +11,11 @@ from datetime import datetime, date
 import logging
 from .models import Empleado, Asistencia, Horario, Justificante
 from .forms import EmpleadoCreationForm, EmpleadoForm, JustificanteRetardoForm, HorarioForm
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from openpyxl.utils import get_column_letter
+
+
 # Configurar logger para la aplicación
 logger = logging.getLogger(__name__)
 
@@ -450,6 +455,10 @@ def asistencia_events(request):
 
 @login_required
 def reporte_asistencias(request):
+
+    if request.GET.get("exportar") == "excel":
+        return exportar_asistencias_excel(request)
+
     """Generar reporte de asistencias (solo administradores)."""
     if not request.user.groups.filter(name='administracion').exists():
         return HttpResponseForbidden('No tienes permiso para ver esta página')
@@ -602,3 +611,96 @@ def rechazar_justificante(request, justificante_id):
         'accion': 'rechazar'
     })
 
+
+from django.http import HttpResponse
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from openpyxl.utils import get_column_letter
+from datetime import datetime
+from .models import Asistencia, Empleado
+
+@login_required
+def exportar_asistencias_excel(request):
+
+    fecha_inicio = request.GET.get("fecha_inicio")
+    fecha_fin = request.GET.get("fecha_fin")
+    empleado_id = request.GET.get("empleado")
+    tipo = request.GET.get("tipo")
+
+    asistencias = Asistencia.objects.select_related("empleado").all()
+
+    if fecha_inicio:
+        asistencias = asistencias.filter(fecha__gte=fecha_inicio)
+
+    if fecha_fin:
+        asistencias = asistencias.filter(fecha__lte=fecha_fin)
+
+    if empleado_id and empleado_id != "todos":
+        asistencias = asistencias.filter(empleado_id=empleado_id)
+
+    if tipo and tipo != "todos":
+        asistencias = asistencias.filter(tipo=tipo)
+
+    # Crear Excel
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Asistencias"
+
+    ws.merge_cells("A1:F1")
+    titulo = ws["A1"]
+    titulo.value = "Reporte de Asistencias"
+    titulo.font = Font(size=16, bold=True)
+    titulo.alignment = Alignment(horizontal="center")
+
+    encabezados = ["Fecha", "Empleado", "Entrada", "Salida", "Tipo", "Observaciones"]
+    ws.append(encabezados)
+
+    header_fill = PatternFill(start_color="DDDDDD", fill_type="solid")
+    header_font = Font(bold=True)
+    header_alignment = Alignment(horizontal="center")
+
+    for col in range(1, len(encabezados) + 1):
+        c = ws.cell(row=2, column=col)
+        c.fill = header_fill
+        c.font = header_font
+        c.alignment = header_alignment
+
+    for a in asistencias:
+        ws.append([
+            a.fecha.strftime("%d/%m/%Y"),
+            str(a.empleado),
+            a.hora_entrada.strftime("%H:%M:%S") if a.hora_entrada else "-",
+            a.hora_salida.strftime("%H:%M:%S") if a.hora_salida else "-",
+            a.get_tipo_display(),
+            a.observaciones or "-"
+        ])
+
+    thin = Border(
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin")
+    )
+
+    max_row = ws.max_row
+    max_col = ws.max_column
+
+    for row in ws.iter_rows(min_row=2, max_row=max_row, min_col=1, max_col=max_col):
+        for cell in row:
+            cell.border = thin
+
+    for col in ws.columns:
+        max_len = 0
+        col_letter = get_column_letter(col[0].column)
+        for cell in col:
+            val = str(cell.value)
+            if val:
+                max_len = max(max_len, len(val))
+        ws.column_dimensions[col_letter].width = max_len + 6
+
+    ws.auto_filter.ref = f"A2:{get_column_letter(max_col)}{max_row}"
+
+    response = HttpResponse(content_type="application/ms-excel")
+    response["Content-Disposition"] = 'attachment; filename="reporte_asistencias.xlsx"'
+    wb.save(response)
+    return response
