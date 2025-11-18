@@ -2,34 +2,76 @@
 {% load static %}
 
 {% block content %}
-<div class="container py-4">
-    <h2 class="mb-3">{% if horario %}Editar Horario{% else %}Crear Horario{% endif %}</h2>
 
-    <form method="post">
-        {% csrf_token %}
-        <div class="row">
-            <div class="col-md-6">
-                <div class="mb-3">
-                    {{ form.nombre.label_tag }}
-                    {{ form.nombre }}
-                </div>
-                <div class="mb-3">
-                    <label>Días laborales</label>
+<div class="container py-4">
+
+    <div class="card shadow-sm p-4">
+
+        <h2 class="mb-4 fw-bold text-primary border-bottom pb-2">
+            {% if horario %}Editar Horario{% else %}Crear Horario{% endif %}
+        </h2>
+
+        {% if form.errors %}
+        <div id="error-empleado" class="alert alert-danger border-0 shadow-sm mt-2">
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                {{ form.empleado_busqueda.label_tag }}
+                {{ form.empleado_busqueda }}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Dias Laborales:</label>
+                <div class="d-flex flex-wrap gap-3">
                     {{ form.dias }}
                 </div>
-                <div class="mb-3">
-                    {{ form.hora_entrada.label_tag }}
-                    {{ form.hora_entrada }}
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.hora_entrada.label_tag }}
+                        {{ form.hora_entrada }}
+                    </div>
                 </div>
-                <div class="mb-3">
-                    {{ form.hora_salida.label_tag }}
-                    {{ form.hora_salida }}
+
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.hora_salida.label_tag }}
+                        {{ form.hora_salida }}
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <button class="btn btn-primary" type="submit">Guardar</button>
-        <a href="{% url 'control:listar_horarios' %}" class="btn btn-secondary">Cancelar</a>
-    </form>
+            <div class="mt-4 d-flex gap-2">
+                <button class="btn btn-primary px-4" type="submit">Guardar</button>
+                <a href="{% url 'control:listar_horarios' %}" class="btn btn-secondary px-4">Cancelar</a>
+            </div>
+
+        </form>
+
+    </div>
 </div>
+
+<!-- DESAPARECER MENSAJE -->
+<script>
+    setTimeout(function() {
+        const msg = document.getElementById("error-empleado");
+        if (msg) {
+            msg.style.transition = "opacity 0.8s ease";
+            msg.style.opacity = "0";
+            setTimeout(() => msg.remove(), 800);
+        }
+    }, 3000);
+</script>
+
 {% endblock %}

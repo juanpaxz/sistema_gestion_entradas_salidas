@@ -15,7 +15,6 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 
-
 # Configurar logger para la aplicación
 logger = logging.getLogger(__name__)
 
@@ -612,15 +611,11 @@ def rechazar_justificante(request, justificante_id):
     })
 
 
-from django.http import HttpResponse
-from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
-from openpyxl.utils import get_column_letter
-from datetime import datetime
-from .models import Asistencia, Empleado
 
 @login_required
 def exportar_asistencias_excel(request):
+
+    
 
     fecha_inicio = request.GET.get("fecha_inicio")
     fecha_fin = request.GET.get("fecha_fin")
@@ -649,14 +644,15 @@ def exportar_asistencias_excel(request):
     ws.merge_cells("A1:F1")
     titulo = ws["A1"]
     titulo.value = "Reporte de Asistencias"
-    titulo.font = Font(size=16, bold=True)
-    titulo.alignment = Alignment(horizontal="center")
+    titulo.font = Font(size=18, bold=True, color="FFFFFF")
+    titulo.alignment = Alignment(horizontal="center", vertical="center")
+    titulo.fill = PatternFill(start_color="4A90E2", fill_type="solid")
 
     encabezados = ["Fecha", "Empleado", "Entrada", "Salida", "Tipo", "Observaciones"]
     ws.append(encabezados)
 
-    header_fill = PatternFill(start_color="DDDDDD", fill_type="solid")
-    header_font = Font(bold=True)
+    header_fill = PatternFill(start_color="87BFFF", fill_type="solid")  # Azul suave
+    header_font = Font(bold=True, color="000000")
     header_alignment = Alignment(horizontal="center")
 
     for col in range(1, len(encabezados) + 1):
@@ -664,6 +660,9 @@ def exportar_asistencias_excel(request):
         c.fill = header_fill
         c.font = header_font
         c.alignment = header_alignment
+
+    row_num = 3
+    fill_gris = PatternFill(start_color="F2F2F2", fill_type="solid")
 
     for a in asistencias:
         ws.append([
@@ -674,6 +673,14 @@ def exportar_asistencias_excel(request):
             a.get_tipo_display(),
             a.observaciones or "-"
         ])
+
+        # estilo de fila alternada
+        if row_num % 2 == 1:
+            for col in range(1, 7):
+                ws.cell(row=row_num, column=col).fill = fill_gris
+
+        row_num += 1
+
 
     thin = Border(
         left=Side(style="thin"),
@@ -689,16 +696,17 @@ def exportar_asistencias_excel(request):
         for cell in row:
             cell.border = thin
 
+  
     for col in ws.columns:
         max_len = 0
         col_letter = get_column_letter(col[0].column)
         for cell in col:
-            val = str(cell.value)
-            if val:
-                max_len = max(max_len, len(val))
-        ws.column_dimensions[col_letter].width = max_len + 6
+            val = str(cell.value) if cell.value else ""
+            max_len = max(max_len, len(val))
+        ws.column_dimensions[col_letter].width = max_len + 4
 
     ws.auto_filter.ref = f"A2:{get_column_letter(max_col)}{max_row}"
+    ws.freeze_panes = "A3"  # fija encabezados
 
     response = HttpResponse(content_type="application/ms-excel")
     response["Content-Disposition"] = 'attachment; filename="reporte_asistencias.xlsx"'

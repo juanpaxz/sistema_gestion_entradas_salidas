@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.utils.timezone import localtime
+
 
 class Empleado(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -77,12 +79,12 @@ class Asistencia(models.Model):
 
     def registrar_entrada(self):
         if not self.hora_entrada:
-            self.hora_entrada = timezone.now()
+            localtime(a.hora_entrada).strftime("%H:%M:%S") if a.hora_entrada else "-"
             self.save()
 
     def registrar_salida(self):
         if self.hora_entrada and not self.hora_salida:
-            self.hora_salida = timezone.now()
+            localtime(a.hora_salida).strftime("%H:%M:%S") if a.hora_salida else "-"
             self.save()
 
 

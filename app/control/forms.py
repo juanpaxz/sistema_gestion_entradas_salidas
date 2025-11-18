@@ -101,8 +101,18 @@ class JustificanteRetardoForm(forms.ModelForm):
         return pdf
 
 
+
 class HorarioForm(forms.ModelForm):
-    # Mostrar días como múltiples opciones para facilitar la creación
+    empleado_busqueda = forms.CharField(
+    label="Empleado (Nombre completo o RFC):",
+    required=True,
+    widget=forms.TextInput(attrs={
+        'class': 'form-control form-control',  
+        'placeholder': 'Escribe el nombre completo o el RFC'
+    })
+)
+
+    # Mostrar días como multiples opciones (como antes)
     DIAS = [
         ('Lunes', 'Lunes'),
         ('Martes', 'Martes'),
@@ -113,11 +123,16 @@ class HorarioForm(forms.ModelForm):
         ('Domingo', 'Domingo'),
     ]
 
-    dias = forms.MultipleChoiceField(choices=DIAS, widget=forms.CheckboxSelectMultiple, required=True, label='Días laborales')
+    dias = forms.MultipleChoiceField(
+        choices=DIAS,
+        widget=forms.CheckboxSelectMultiple,
+        required=True,
+        label='Días laborales'
+    )
 
     class Meta:
         model = Horario
-        fields = ['nombre', 'hora_entrada', 'hora_salida']
+        fields = ['empleado_busqueda', 'nombre', 'hora_entrada', 'hora_salida']
         widgets = {
             'hora_entrada': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'class': 'form-control'}),
             'hora_salida': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'class': 'form-control'}),
@@ -126,11 +141,40 @@ class HorarioForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # If editing, populate the 'dias' field from the stored comma-separated value
+        # Mantener funcionalidad original
         if self.instance and self.instance.pk:
             dias_val = self.instance.dias_laborales or ''
             self.fields['dias'].initial = [d.strip() for d in dias_val.split(',') if d.strip()]
 
+
+    def clean_empleado_busqueda(self):
+        texto = self.cleaned_data.get('empleado_busqueda').strip()
+
+        # 1. Buscar por RFC
+        empleado = Empleado.objects.filter(rfc=texto).first()
+
+        # 2. Buscar por nombre completo exacto
+        if not empleado:
+            partes = texto.split()
+            if len(partes) >= 2:
+                nombre = partes[0]
+                apellido = " ".join(partes[1:])
+                empleado = Empleado.objects.filter(
+                    nombre__iexact=nombre,
+                    apellido__iexact=apellido
+                ).first()
+
+        # 3. Si no existe
+        if not empleado:
+            raise forms.ValidationError(
+                "El empleado no esta registrado."
+            )
+
+        # Guardamos el empleado encontrado
+        self.empleado_validado = empleado
+        return texto
+
+    # Mantener validación original
     def clean(self):
         cleaned = super().clean()
         dias = cleaned.get('dias')
@@ -138,10 +182,17 @@ class HorarioForm(forms.ModelForm):
             raise forms.ValidationError('Seleccione al menos un día laboral.')
         return cleaned
 
+    # Guardar horario y asignarlo al empleado
     def save(self, commit=True):
         instance = super().save(commit=False)
+
         dias = self.cleaned_data.get('dias', [])
         instance.dias_laborales = ','.join(dias)
+
         if commit:
             instance.save()
+
+        # Asignar el horario al empleado validado
+        self.empleado_validado.horarios.add(instance)
+
         return instance
