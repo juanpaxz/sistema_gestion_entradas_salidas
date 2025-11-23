@@ -97,12 +97,10 @@
             </tbody>
         </table>
     </div>
+    
 
-    <!-- Botón de exportar -->
-    <div class="mt-3">
-        <a href="?{{ request.GET.urlencode }}&export=xlsx" class="btn btn-success">
-            Exportar a Excel
-        </a>
-    </div>
+    <a href="?exportar=excel&{{ request.GET.urlencode }}" class="btn btn-success">
+        Exportar Excel
+    </a>
 </div>
 {% endblock %}
