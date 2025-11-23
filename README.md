@@ -169,3 +169,9 @@ Para acceder al sistema como administrador, es necesario crear un superusuario. 
    - **Password (again)**
 
 Una vez finalizado, ya podrás acceder al sistema seleccionado.
+
+3. cargar datos prueba
+
+docker compose exec gestion_de_entradas /env/bin/python manage.py loaddata control/fixtures/datos_iniciales.json
+
+

@@ -7,18 +7,7 @@
 <link rel="stylesheet" href="{% static 'control/css/theme.css' %}">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-<style>  
-    body {
-        /* Fondo por defecto (modo claro) */
-        background-color: #f4f7f6;
-        transition: background-color 0.3s ease;
-    }
-
-    /* Fondo para modo oscuro */
-    body.dark {
-        background-color: #0f1720;
-    }
-
+<style>
     .kiosk-container {
         min-height: 100vh;
         display: flex;
@@ -37,25 +26,7 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, var(--brand-primary), #1a237e);
-        color: #fff;
-        font-weight: 800;
-        box-shadow: 0 10px 25px rgba(45, 139, 210, 0.2);
         margin-bottom: 1rem; 
-    }
-    
-    body.dark .brand-logo-lg {
-        background: linear-gradient(135deg, var(--brand-primary), #3a4b9a);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-    }
-
-
-
-    body.dark #current-time {
-        color: #283593;
-    }
-    body.dark #current-date {
-        color: rgba(230, 238, 246, 0.7);
     }
     
     @media (max-width: 576px) {
@@ -72,12 +43,6 @@
         border-radius: 12px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.08);
         border: 1px solid #e0e0e0;
-    }
-    
-    body.dark .login-form {
-        background-color: #0b1220;
-        border-color: rgba(255, 255, 255, 0.1);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
     }
     
     .login-form .form-label {
@@ -100,69 +65,43 @@
         background-color: #f4f7f6;
     }
     .login-form input:focus {
-        border-color: #283593;
-        box-shadow: 0 0 0 0.15rem rgba(40, 53, 147, 0.15);
+        /* Enfoque: color de borde reemplazado (antes azul) */
+        border-color: #c70f02;
+        /* Sombra suave usando versión translúcida del nuevo color */
+        box-shadow: 0 0 0 0.15rem rgba(199, 15, 2, 0.12);
     }
-    body.dark .login-form input[type="text"],
-    body.dark .login-form input[type="password"] {
-        background-color: #0f1720;
-        border-color: rgba(255, 255, 255, 0.15);
-        color: #fff;
-    }
-    /* --- Fin estilos Django --- */
-
-    /* Botón de Ingresar con el color solicitado */
+    /* Botón principal: usar color sólido para mejor contraste
+       Antes se usó un hex de 8 dígitos (`#c70f0285`) que incluye un canal alpha
+       — eso hace el fondo semitransparente y provoca el aspecto opaco. */
     #btn-ingresar {
-        background-color: #283593 !important;
-        border-color: #283593 !important;
+        /* Color sólido (sin transparencia) */
+        background-color: #c70f02 !important;
+        /* Texto blanco para buen contraste sobre el fondo rojo */
+        color: #ffffff !important;
+        /* Borde ligeramente más oscuro que el fondo */
+        border-color: #b80d02 !important;
         padding-top: 0.7rem;
         padding-bottom: 0.7rem;
         font-size: 1.1rem;
         font-weight: 600;
+        /* Sombra sutil para que resalte sobre el fondo blanco */
+        box-shadow: 0 4px 10px rgba(199,15,2,0.12);
     }
 
-    /* Botón para cambiar tema */
-    #theme-toggle-btn {
-        position: fixed;
-        top: 1rem;
-        right: 1rem;
-        z-index: 1050;
-        width: 45px;
-        height: 45px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.5);
-        border: 1px solid rgba(0, 0, 0, 0.08);
-        color: #0f1720;
-        font-size: 1.25rem;
-        transition: all 0.15s ease;
-        backdrop-filter: blur(5px);
-    }
-    
-    body.dark #theme-toggle-btn {
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: #fff;
-    }
 </style>
 {% endblock %}
 
 {% block content %}
 
-<button id="theme-toggle" class="btn" title="Alternar tema" style="display:none;">🌙</button>
-<button id="theme-toggle-btn" title="Alternar tema">
-    <span>🌙</span>
-</button>
 
 <div class="kiosk-container">
 
     <div class="brand-logo-lg">
-        CI
+           <img src="{% static 'control/img/logo.jpg' %}" alt="Logo" style="width:100%; height:100%; object-fit:contain; border-radius:12px; display:block;">
     </div>
 
-    <div class="title" style="color: #283593; font-weight: 1000; font-size: 1.5rem; margin-bottom: 1rem;">
+    <!-- Título principal: color cambiado de azul a nuevo color solicitado -->
+    <div class="title" style="color: #c70f02; font-weight: 1000; font-size: 1.5rem; margin-bottom: 1rem;">
         Escuela del Servicio Social
     </div>
 
@@ -213,41 +152,4 @@
 
 {% endblock %}
 
-{% block extra_js %}
-<script>
-
-    // --- LÓGICA DE MODO OSCURO (copiada de base.html) ---
-    (function(){
-      const storageKey = 'theme';
-      const toggleBtn = document.getElementById('theme-toggle-btn');
-      const iconSpan = toggleBtn.querySelector('span');
-
-      function applyTheme(theme){
-        if(theme === 'dark'){
-          document.body.classList.add('dark');
-          if(iconSpan) iconSpan.innerHTML = '☀️';
-        } else {
-          document.body.classList.remove('dark');
-          if(iconSpan) iconSpan.innerHTML = '🌙';
-        }
-      }
-      
-      // init
-      let savedTheme = 'light';
-      try{
-        savedTheme = localStorage.getItem(storageKey) || 'light';
-        applyTheme(savedTheme);
-      }catch(e){ /* ignore */ }
-
-      // attach to toggle button
-      if(!toggleBtn) return;
-      
-      toggleBtn.addEventListener('click', function(e){
-          const isDark = document.body.classList.contains('dark');
-          const next = isDark ? 'light' : 'dark';
-          try{ localStorage.setItem(storageKey, next); }catch(err){}
-          applyTheme(next);
-      });
-    })();
-</script>
-{% endblock %}
+{% block extra_js %}{% endblock %}

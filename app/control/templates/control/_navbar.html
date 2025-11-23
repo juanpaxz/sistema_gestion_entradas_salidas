@@ -39,9 +39,7 @@
   .nav-actions { display:flex; gap:.5rem; align-items:center; border-left: 1px solid rgba(255,255,255,0.10); padding-left: .7rem; margin-left: .6rem; }
   .user-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(180deg,#ffffff,#dfefff); display:inline-flex; align-items:center; justify-content:center; color:#0b2a4a; font-weight:700; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
   .dropdown-menu-end { min-width:200px; }
-  /* Theme toggle styling */
-  #theme-toggle { width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); transition: background-color .15s ease, transform .12s ease; }
-  #theme-toggle:hover { background: rgba(255,255,255,0.10); transform: translateY(-2px); }
+  /* Theme toggle removed (dark mode not used) */
   @media (max-width: 767px){
     .navbar-custom .navbar-collapse { background: rgba(0,0,0,0.03); }
     .nav-actions { gap:.25rem; }
@@ -117,9 +115,7 @@
             <a class="btn btn-outline-light" href="{% url 'control:login' %}">Iniciar sesión</a>
           </li>
         {% endif %}
-        <li class="nav-item ms-2">
-          <button id="theme-toggle" class="btn btn-sm btn-outline-light" title="Alternar tema">🌙</button>
-        </li>
+        <!-- theme toggle removed -->
       </ul>
     </div>
   </div>

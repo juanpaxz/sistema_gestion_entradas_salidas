@@ -86,18 +86,7 @@
   outline-offset: 4px;
 }
 
-/* Dark theme - stronger global background */
-[data-bs-theme="dark"] body {
-  /* color: navy/charcoal — adjust hex as you prefer */
-  background-color: #20252a; /* stronger, deep-blue/charcoal */
-  color: #e6eef8; /* light text for contrast */
-}
-
-/* Optional: make cards slightly elevated/darker on dark theme for contrast */
-[data-bs-theme="dark"] .card {
-  background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255,255,255,0.04);
-}
+/* Dark theme removed — using light styles only */
 
 /* Make footer match the navbar gradient (use same blue gradient as navbar) */
 footer.footer {
@@ -111,9 +100,7 @@ footer.footer .text-muted {
 }
 
 /* If theme is dark, ensure footer border-color subtle */
-[data-bs-theme="dark"] footer.footer {
-  border-top-color: rgba(255,255,255,0.04);
-}
+/* end */
 
 
 

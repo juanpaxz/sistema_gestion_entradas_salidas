@@ -9,17 +9,6 @@
 
 <style>
 
-    body {
-        /* Fondo por defecto (modo claro) */
-        background-color: #f4f7f6;
-        transition: background-color 0.3s ease;
-    }
-
-    /* Fondo para modo oscuro */
-    body.dark {
-        background-color: #0f1720;
-    }
-
     .kiosk-container {
         min-height: 100vh;
         display: flex;
@@ -37,19 +26,15 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, var(--brand-primary), #1a237e);
-        color: #1a237e;
+        /* Usar degradado sutil en tonos del color de marca rojo */
+        background: linear-gradient(135deg, #c70f02, #b80d02);
+        color: #ffffff;
         font-weight: 800;
-        box-shadow: 0 10px 25px rgba(45, 139, 210, 0.2);
+        /* Sombra adaptada al color rojo */
+        box-shadow: 0 10px 25px rgba(199, 15, 2, 0.12);
         margin-bottom: 1rem; 
     }
     
-    body.dark .brand-logo-lg {
-        background: linear-gradient(135deg, var(--brand-primary), #3a4b9a);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-        color: #e6eef6;
-    }
-
     /* Estilo del Reloj */
     .clock-display {
         margin-bottom: 1.5rem; 
@@ -59,23 +44,14 @@
         font-size: 4.5rem; 
         font-weight: 700;
         line-height: 1;
-        /* --- CAMBIO AQUÍ: Color solicitado para el reloj --- */
-        color: #283593;
+        color: #c70f02;
         letter-spacing: -2px;
     }
     
     #current-date {
         font-size: 1.5rem; 
         font-weight: 300;
-        color: #555;
-    }
-
-    body.dark #current-time {
-        /* --- CAMBIO AQUÍ: Color solicitado para el reloj (modo oscuro) --- */
-        color: #283593;
-    }
-    body.dark #current-date {
-        color: rgba(230, 238, 246, 0.7);
+        color: #000000;
     }
     
     @media (max-width: 576px) {
@@ -83,7 +59,6 @@
         #current-date { font-size: 1.15rem; }
     }
 
-    /* Estilo del formulario de registro */
     .register-form {
         max-width: 360px; /* Más compacto */
         width: 100%;
@@ -94,11 +69,6 @@
         border: 1px solid #e0e0e0;
     }
     
-    body.dark .register-form {
-        background-color: #0b1220;
-        border-color: rgba(255, 255, 255, 0.1);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    }
     
     .register-form .form-label {
         font-weight: 600;
@@ -113,11 +83,6 @@
         border-width: 2px;
     }
     
-    body.dark .register-form .form-control-lg {
-        background-color: #0f1720;
-        border-color: rgba(255, 255, 255, 0.15);
-        color: #fff;
-    }
 
     .register-form .btn-lg {
         padding-top: 0.7rem;
@@ -134,61 +99,44 @@
         background-color: #6c757d;
         border-color: #6c757d;
     }
-    body.dark .btn-secondary {
-        background-color: #3a4a58;
-        border-color: #3a4a58;
-        color: #e6eef6;
+    /* Asegurar colores correctos: entrada = verde oscuro, salida = rojo oscuro */
+    #btn-entrada {
+        background-color: #157347 !important;
+        border-color: #0f5a3b !important;
+        color: #ffffff !important;
+        box-shadow: 0 6px 14px rgba(21,115,71,0.12);
+    }
+    #btn-entrada:hover {
+        background-color: #13603a !important;
+        border-color: #0e4f33 !important;
     }
 
-    /* Botón para cambiar tema */
-    #theme-toggle-btn {
-        position: fixed;
-        top: 1rem;
-        right: 1rem;
-        z-index: 1050;
-        width: 45px;
-        height: 45px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.5);
-        border: 1px solid rgba(0, 0, 0, 0.08);
-        color: #0f1720;
-        font-size: 1.25rem;
-        transition: all 0.15s ease;
-        backdrop-filter: blur(5px);
+    #btn-salida {
+        background-color: #a60d02 !important;
+        border-color: #8f0b02 !important;
+        color: #ffffff !important;
+        box-shadow: 0 6px 14px rgba(166,13,2,0.12);
     }
-    
-    body.dark #theme-toggle-btn {
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: #fff;
-    }
-    
-    /* --- NUEVA REGLA PARA EL BOTÓN DE ENTRADA --- */
-    #btn-entrada {
-        background-color: #283593 !important;
-        border-color: #283593 !important;
+    #btn-salida:hover {
+        background-color: #8f0b02 !important;
+        border-color: #7a0902 !important;
     }
 </style>
 {% endblock %}
 
 {% block content %}
 
-<button id="theme-toggle" class="btn" title="Alternar tema" style="display:none;">🌙</button>
-<button id="theme-toggle-btn" title="Alternar tema">
-    <span>🌙</span>
-</button>
+<!-- theme toggle removed -->
 
 
 <div class="kiosk-container">
 
     <div class="brand-logo-lg">
-        CI
+        <!-- Logo: reemplazamos el texto 'CI' por la imagen de la marca -->
+        <img src="{% static 'control/img/logo.jpg' %}" alt="Logo" style="width:100%; height:100%; object-fit:contain; border-radius:12px; display:block;">
     </div>
 
-    <div class="title" style="color: #283593; font-weight: 1000; font-size: 1.5rem; margin-bottom: 1rem;">
+    <div class="title" style="color: #c70f02; font-weight: 1000; font-size: 1.5rem; margin-bottom: 1rem;">
         Escuela del Servicio Social
     </div>
 
@@ -302,38 +250,6 @@
         });
     });
 
-    // --- LÓGICA DE MODO OSCURO (copiada de base.html) ---
-    (function(){
-      const storageKey = 'theme';
-      const toggleBtn = document.getElementById('theme-toggle-btn');
-      const iconSpan = toggleBtn.querySelector('span');
-
-      function applyTheme(theme){
-        if(theme === 'dark'){
-          document.body.classList.add('dark');
-          if(iconSpan) iconSpan.innerHTML = '☀️';
-        } else {
-          document.body.classList.remove('dark');
-          if(iconSpan) iconSpan.innerHTML = '🌙';
-        }
-      }
-      
-      // init
-      let savedTheme = 'light';
-      try{
-        savedTheme = localStorage.getItem(storageKey) || 'light';
-        applyTheme(savedTheme);
-      }catch(e){ /* ignore */ }
-
-      // attach to toggle button
-      if(!toggleBtn) return;
-      
-      toggleBtn.addEventListener('click', function(e){
-          const isDark = document.body.classList.contains('dark');
-          const next = isDark ? 'light' : 'dark';
-          try{ localStorage.setItem(storageKey, next); }catch(err){}
-          applyTheme(next);
-      });
-    })();
+        // dark mode logic removed
 </script>
 {% endblock %}
