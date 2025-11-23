@@ -277,13 +277,6 @@ def registrar_entrada(request):
     # Verificar si es un retardo en base al horario asignado al empleado.
     hora_actual = timezone.localtime(asistencia.hora_entrada).time()
 
-    # Intentar obtener el empleado si no fue pasado por RFC (kiosk)
-    if empleado is None and request.user.is_authenticated:
-        try:
-            empleado = Empleado.objects.get(user=request.user)
-        except Empleado.DoesNotExist:
-            empleado = None
-
     hora_limite = None
     if empleado:
         horario = empleado.get_horario_para_fecha()
