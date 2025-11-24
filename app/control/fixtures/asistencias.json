@@ -1,0 +1,62 @@
+[
+  {
+    "model": "control.Asistencia",
+    "pk": 1,
+    "fields": {
+      "empleado": 2,
+      "fecha": "2025-11-18",
+      "hora_entrada": "06:57:00",
+      "hora_salida": "17:05:00",
+      "tipo": "normal",
+      "observaciones": "Registro generado por fixture."
+    }
+  },
+  {
+    "model": "control.Asistencia",
+    "pk": 2,
+    "fields": {
+      "empleado": 2,
+      "fecha": "2025-11-19",
+      "hora_entrada": "07:01:00",
+      "hora_salida": "17:00:00",
+      "tipo": "normal",
+      "observaciones": "Registro generado por fixture."
+    }
+  },
+  {
+    "model": "control.Asistencia",
+    "pk": 3,
+    "fields": {
+      "empleado": 2,
+      "fecha": "2025-11-20",
+      "hora_entrada": "06:55:00",
+      "hora_salida": "17:02:00",
+      "tipo": "normal",
+      "observaciones": "Registro generado por fixture."
+    }
+  },
+  {
+    "model": "control.Asistencia",
+    "pk": 4,
+    "fields": {
+      "empleado": 2,
+      "fecha": "2025-11-21",
+      "hora_entrada": "07:01:00",
+      "hora_salida": "17:10:00",
+      "tipo": "retardo",
+      "observaciones": "Registro generado por fixture."
+    }
+  },
+  {
+    "model": "control.Asistencia",
+    "pk": 5,
+    "fields": {
+      "empleado": 2,
+      "fecha": "2025-11-22",
+      "hora_entrada": "06:59:00",
+      "hora_salida": "17:00:00",
+      "tipo": "normal",
+      "observaciones": "Registro generado por fixture."
+    }
+  }
+]

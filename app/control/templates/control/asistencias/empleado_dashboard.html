@@ -2,9 +2,6 @@
 {% load static %}
 
 {% block content %}
-<!-- FullCalendar (CDN) -->
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet" />
-<link rel="stylesheet" href="{% static 'control/css/calendar.css' %}">
 
 <div class="container py-4">
     <h2 class="mb-4">Calendario de Asistencias</h2>
@@ -46,6 +43,7 @@
             <p><strong>Salida:</strong> <span id="modal-salida"></span></p>
             <p><strong>Tipo:</strong> <span id="modal-tipo"></span></p>
             <p><strong>Observaciones:</strong> <span id="modal-observaciones"></span></p>
+            <p><strong>Diferencia:</strong> <span id="modal-diferencia"></span></p>
             <div id="modal-justificante" class="mt-2"></div>
           </div>
           <div class="modal-footer">
@@ -55,8 +53,14 @@
       </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <!-- 1. CSS FullCalendar -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet" />
 
+    <!-- 2. TU CSS personalizado (siempre después del CDN) -->
+    <link rel="stylesheet" href="{% static 'control/css/calendar.css' %}">
+
+    <!-- 3. JS FullCalendar -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -85,6 +89,7 @@
                 document.getElementById('modal-salida').textContent = props.hora_salida || '-';
                 document.getElementById('modal-tipo').textContent = (props.tipo || '-').toString();
                 document.getElementById('modal-observaciones').textContent = props.observaciones || '-';
+                document.getElementById('modal-diferencia').textContent = props.diferencia || '-';
 
                 var justificanteDiv = document.getElementById('modal-justificante');
                 justificanteDiv.innerHTML = '';

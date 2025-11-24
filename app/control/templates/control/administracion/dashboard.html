@@ -79,6 +79,30 @@
   </div>
 
   <div class="row mt-4">
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">⚙️ Configuración rápida</h5>
+          <p class="text-muted">Define cuántos minutos de diferencia se consideran retardo al registrar la entrada.</p>
+          <form method="post" class="row g-2 align-items-center">
+            {% csrf_token %}
+            <div class="col-auto">
+              <label for="retardo_minutos" class="col-form-label">Minutos de tolerancia</label>
+            </div>
+            <div class="col-auto">
+              <input type="number" min="0" step="1" class="form-control" id="retardo_minutos" name="retardo_minutos" value="{{ retardo_minutos|default:5 }}">
+            </div>
+            <div class="col-auto">
+              <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
+          </form>
+          <div class="mt-2 small text-muted">Actualmente: <strong>{{ retardo_minutos|default:5 }} minutos</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-4">
     <div class="col-12">
       <div class="card">
         <div class="card-body">

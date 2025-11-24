@@ -173,11 +173,17 @@
     // --- LÓGICA DEL RELOJ ---
     function updateClock() {
         const now = new Date();
-        const timeOpts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+        // Usar formato 12 horas
+        const timeOpts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
         const dateOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        
-        document.getElementById('current-time').textContent = now.toLocaleTimeString('es-MX', timeOpts);
-        
+
+        // Obtener cadena local y normalizar AM/PM para consistencia (p. ej. 'a. m.' -> 'AM')
+        let timeString = now.toLocaleTimeString('es-MX', timeOpts);
+        // Reemplazar variantes locales de a. m./p. m. por AM/PM (case-insensitive)
+        timeString = timeString.replace(/\s?a\.?\s?m\.?/i, ' AM').replace(/\s?p\.?\s?m\.?/i, ' PM');
+
+        document.getElementById('current-time').textContent = timeString;
+
         // Capitalizar la primera letra del día
         let dateString = now.toLocaleDateString('es-MX', dateOpts);
         document.getElementById('current-date').textContent = dateString.charAt(0).toUpperCase() + dateString.slice(1);

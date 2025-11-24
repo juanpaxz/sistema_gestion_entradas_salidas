@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+import datetime
 
 class Empleado(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -55,9 +56,9 @@ class Empleado(models.Model):
 class Asistencia(models.Model):
     empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE, related_name='asistencias')
     fecha = models.DateField(default=timezone.now)
-    hora_entrada = models.DateTimeField(null=True, blank=True)
-    hora_salida = models.DateTimeField(null=True, blank=True)
-    
+    hora_entrada = models.TimeField(null=True, blank=True)
+    hora_salida = models.TimeField(null=True, blank=True)
+        
     TIPO_CHOICES = [
         ('normal', 'Normal'),
         ('retardo', 'Retardo'),
@@ -77,14 +78,110 @@ class Asistencia(models.Model):
 
     def registrar_entrada(self):
         if not self.hora_entrada:
-            self.hora_entrada = timezone.now()
+            # Guardar solo la hora (TimeField) en la zona local
+            now = timezone.localtime(timezone.now())
+            self.hora_entrada = now.time()
             self.save()
 
     def registrar_salida(self):
         if self.hora_entrada and not self.hora_salida:
-            self.hora_salida = timezone.now()
+            now = timezone.localtime(timezone.now())
+            self.hora_salida = now.time()
             self.save()
 
+    @property
+    def diferencia(self):
+        if not self.hora_entrada:
+            return None
+
+        # obtener horario aplicable
+        try:
+            horario = self.empleado.get_horario_para_fecha(self.fecha)
+        except Exception:
+            horario = None
+
+        if not horario or not horario.hora_entrada:
+            return None
+
+        # hora programada (TimeField en Horario)
+        h_prog = horario.hora_entrada
+        if isinstance(h_prog, datetime.datetime):
+            h_prog = h_prog.time()
+        if not isinstance(h_prog, datetime.time):
+            return None
+
+        # Construir datetimes aware para comparar
+        try:
+            prog_naive = datetime.datetime.combine(self.fecha, h_prog)
+            prog_aware = timezone.make_aware(prog_naive, timezone.get_current_timezone())
+        except Exception:
+            return None
+
+        # Determinar datetime de entrada a partir del campo (puede ser time o datetime)
+        entrada_dt = None
+        if isinstance(self.hora_entrada, datetime.time):
+            try:
+                ent_naive = datetime.datetime.combine(self.fecha, self.hora_entrada)
+                entrada_dt = timezone.make_aware(ent_naive, timezone.get_current_timezone())
+            except Exception:
+                return None
+        elif isinstance(self.hora_entrada, datetime.datetime):
+            entrada_dt = self.hora_entrada
+            if timezone.is_naive(entrada_dt):
+                try:
+                    entrada_dt = timezone.make_aware(entrada_dt, timezone.get_current_timezone())
+                except Exception:
+                    pass
+        else:
+            return None
+
+        # Calcular diferencia en segundos
+        try:
+            diff_seconds = (entrada_dt - prog_aware).total_seconds()
+        except Exception:
+            return None
+
+        # puntual
+        if abs(diff_seconds) < 60:
+            return "A tiempo"
+
+        mins = abs(int(diff_seconds // 60))
+        return f"{mins} min tarde" if diff_seconds > 0 else f"{mins} min antes"
+
+    def compute_diferencia_minutes(self):
+        if not self.hora_entrada:
+            return None
+
+        try:
+            horario = self.empleado.get_horario_para_fecha(self.fecha)
+        except Exception:
+            return None
+
+        if not horario or not horario.hora_entrada:
+            return None
+
+        h_prog = horario.hora_entrada
+        if isinstance(h_prog, datetime.datetime):
+            h_prog = h_prog.time()
+
+        try:
+            prog_naive = datetime.datetime.combine(self.fecha, h_prog)
+            prog_aware = timezone.make_aware(prog_naive, timezone.get_current_timezone())
+        except Exception:
+            return None
+
+        # normalización
+        if isinstance(self.hora_entrada, datetime.time):
+            ent_naive = datetime.datetime.combine(self.fecha, self.hora_entrada)
+            entrada_dt = timezone.make_aware(ent_naive, timezone.get_current_timezone())
+        else:
+            entrada_dt = self.hora_entrada
+            if timezone.is_naive(entrada_dt):
+                entrada_dt = timezone.make_aware(entrada_dt, timezone.get_current_timezone())
+
+        diff_seconds = (entrada_dt - prog_aware).total_seconds()
+
+        return int(diff_seconds // 60)
 
 class Justificante(models.Model):
     ESTADO_CHOICES = [
@@ -134,3 +231,20 @@ class Horario(models.Model):
         if self.nombre:
             return f"{self.nombre} ({self.dias_laborales})"
         return f"Horario {self.pk} ({self.dias_laborales})"
+
+class SystemConfig(models.Model):
+    """Configuración sencilla editable desde admin.
+
+    Usamos una tabla pequeña con una fila (primera fila usada) para valores globales.
+    """
+    retardo_minutos = models.PositiveIntegerField(default=5, help_text='Minutos de tolerancia para considerar un retardo')
+
+    def __str__(self):
+        return f"Configuración del sistema (retardo_minutos={self.retardo_minutos})"
+
+    @classmethod
+    def get_solo(cls):
+        obj = cls.objects.first()
+        if obj is None:
+            obj = cls.objects.create()
+        return obj

@@ -8,8 +8,9 @@ from django.utils import timezone
 from django.contrib.auth.views import LoginView
 from django.db import IntegrityError
 from datetime import datetime, date
+import datetime as _dt
 import logging
-from .models import Empleado, Asistencia, Horario, Justificante
+from .models import Empleado, Asistencia, Horario, Justificante, SystemConfig
 from .forms import EmpleadoCreationForm, EmpleadoForm, JustificanteRetardoForm, HorarioForm
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
@@ -65,12 +66,34 @@ def dashboard(request):
     if not es_administracion(user):
         return HttpResponseForbidden('No tienes permiso para ver esta página')
 
+    # Si se envía un formulario para actualizar la configuración (umbral de retardo)
+    if request.method == 'POST':
+        ret_min = request.POST.get('retardo_minutos')
+        if ret_min is not None:
+            try:
+                val = int(ret_min)
+                cfg = SystemConfig.get_solo()
+                cfg.retardo_minutos = max(0, val)
+                cfg.save()
+                messages.success(request, f'Umbral de retardo actualizado a {cfg.retardo_minutos} minutos.')
+                return redirect('control:admin_dashboard')
+            except ValueError:
+                messages.error(request, 'Valor inválido para minutos de retardo')
+
     total_empleados = Empleado.objects.count()
     activos = Empleado.objects.filter(estado='activo').count()
+
+    # Obtener umbral actual para mostrar en el dashboard
+    try:
+        cfg = SystemConfig.get_solo()
+        retardo_actual = cfg.retardo_minutos
+    except Exception:
+        retardo_actual = 0
 
     context = {
         'total_empleados': total_empleados,
         'empleados_activos': activos,
+        'retardo_minutos': retardo_actual,
     }
     return render(request, 'control/administracion/dashboard.html', context)
 
@@ -280,27 +303,42 @@ def registrar_entrada(request):
     asistencia.registrar_entrada()
 
     # Verificar si es un retardo en base al horario asignado al empleado.
-    hora_actual = timezone.localtime(asistencia.hora_entrada).time()
+    # `hora_entrada` puede ser `time` (TimeField) o `datetime`.
+    # Calcular minutos de diferencia usando el helper del modelo
+    try:
+        mins = asistencia.compute_diferencia_minutes()
+    except Exception:
+        mins = None
 
-    hora_limite = None
-    if empleado:
-        horario = empleado.get_horario_para_fecha()
-        if horario and horario.hora_entrada:
-            hora_limite = horario.hora_entrada
+    # Obtener umbral de retardo desde configuración
+    try:
+        cfg = SystemConfig.get_solo()
+        umbral = int(cfg.retardo_minutos or 0)
+    except Exception:
+        umbral = 0
+    
+    print("DEBUG >>> hora_entrada:", asistencia.hora_entrada)
+    print("DEBUG >>> mins calculados:", mins)
+    print("DEBUG >>> tipo mins:", type(mins))
+    print("DEBUG >>> umbral minutos:", umbral)
+    print("DEBUG >>> ENTRO AL IF?:", mins is not None and mins > umbral)
 
-    # Fallback a 09:00 si no hay horario asignado
-    if hora_limite is None:
-        hora_limite = datetime.strptime('07:30', '%H:%M').time()
-
-    if hora_actual > hora_limite:
+    # Si la diferencia supera el umbral, marcar retardo
+    if mins is not None and mins > umbral:
         asistencia.tipo = 'retardo'
         asistencia.save()
+
+    # Formatear hora para la respuesta (hora almacenada es TimeField)
+    hora_str = None
+    if isinstance(asistencia.hora_entrada, _dt.time):
+        hora_str = asistencia.hora_entrada.strftime('%H:%M:%S')
 
     return JsonResponse({
         'status': 'success',
         'message': 'Entrada registrada exitosamente',
-        # Mostrar la hora en la zona local del servidor
-        'hora': timezone.localtime(asistencia.hora_entrada).strftime('%H:%M:%S')
+        'hora': hora_str,
+        'diferencia_minutos': mins,
+        'umbral_minutos': umbral,
     })
 
 
@@ -341,11 +379,22 @@ def registrar_salida(request):
         # Registrar la hora de salida
         asistencia.registrar_salida()
 
+        # Obtener hora_salida como time
+        hora_salida = None
+        if asistencia.hora_salida:
+            if isinstance(asistencia.hora_salida, _dt.time):
+                hora_salida = asistencia.hora_salida
+            else:
+                try:
+                    hora_salida = timezone.localtime(asistencia.hora_salida).time()
+                except Exception:
+                    hora_salida = None
+
         return JsonResponse({
             'status': 'success',
             'message': 'Salida registrada exitosamente',
             # Mostrar la hora en la zona local del servidor
-            'hora': timezone.localtime(asistencia.hora_salida).strftime('%H:%M:%S')
+            'hora': hora_salida.strftime('%H:%M:%S') if hora_salida else None
         })
 
     except Asistencia.DoesNotExist:
@@ -434,8 +483,9 @@ def asistencia_events(request):
             'borderColor': color,
             'extendedProps': {
                 'empleado': str(a.empleado) if a.empleado else None,
-                'hora_entrada': timezone.localtime(a.hora_entrada).strftime('%H:%M:%S') if a.hora_entrada else None,
-                'hora_salida': timezone.localtime(a.hora_salida).strftime('%H:%M:%S') if a.hora_salida else None,
+                'hora_entrada': a.hora_entrada.strftime('%I:%M %p') if a.hora_entrada else None,
+                'hora_salida': a.hora_salida.strftime('%I:%M %p') if a.hora_salida else None,
+                'diferencia': a.diferencia if hasattr(a, 'diferencia') else None,
                 'tipo': a.tipo,
                 'observaciones': a.observaciones,
                 'justificante_url': a.justificantes.first().ruta_archivo.url if a.justificantes.exists() and a.justificantes.first().ruta_archivo else None,

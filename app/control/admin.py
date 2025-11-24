@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Empleado, Asistencia, Justificante, Horario
+from .models import Empleado, Asistencia, Justificante, Horario, SystemConfig
 
 
 @admin.register(Justificante)
@@ -75,3 +75,11 @@ class JustificanteAdmin(admin.ModelAdmin):
 admin.site.register(Empleado)
 admin.site.register(Asistencia)
 admin.site.register(Horario)
+@admin.register(SystemConfig)
+class SystemConfigAdmin(admin.ModelAdmin):
+	list_display = ('retardo_minutos',)
+	fields = ('retardo_minutos',)
+	# evitar añadir múltiples configuraciones desde admin: mostrar aviso asumiendo solo una fila
+	def has_add_permission(self, request):
+		# permitir añadir solamente si no existe ninguna
+		return SystemConfig.objects.count() == 0
