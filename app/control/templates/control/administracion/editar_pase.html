@@ -1,0 +1,148 @@
+{% extends 'control/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="fas fa-edit"></i> Editar Pase - {{ pase.folio }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="form-group mb-3">
+                            <label for="id_empleado" class="form-label">
+                                <strong>Empleado</strong>
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.empleado }}
+                            {% if form.empleado.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.empleado.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="id_tipo" class="form-label">
+                                <strong>Tipo de Pase</strong>
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.tipo }}
+                            {% if form.tipo.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.tipo.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="id_folio" class="form-label">
+                                <strong>Folio</strong>
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.folio }}
+                            {% if form.folio.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.folio.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="id_fecha" class="form-label">
+                                        <strong>Fecha</strong>
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.fecha }}
+                                    {% if form.fecha.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.fecha.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="id_hora" class="form-label">
+                                        <strong>Hora de Entrada/Salida</strong>
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.hora }}
+                                    {% if form.hora.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.hora.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="id_hora_reincorporacion" class="form-label">
+                                <strong>Hora de Reincorporación (Opcional)</strong>
+                            </label>
+                            {{ form.hora_reincorporacion }}
+                            <small class="form-text text-muted">
+                                Solo para pases de salida. Deja en blanco si no aplica.
+                            </small>
+                            {% if form.hora_reincorporacion.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.hora_reincorporacion.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="id_asunto" class="form-label">
+                                <strong>Asunto</strong>
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.asunto }}
+                            {% if form.asunto.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.asunto.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="id_observaciones" class="form-label">
+                                <strong>Observaciones (Opcional)</strong>
+                            </label>
+                            {{ form.observaciones }}
+                            {% if form.observaciones.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.observaciones.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save"></i> Guardar Cambios
+                            </button>
+                            <a href="{% url 'control:ver_pase' pase.id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -10,8 +10,9 @@ from django.db import IntegrityError
 from datetime import datetime, date
 import datetime as _dt
 import logging
-from .models import Empleado, Asistencia, Horario, Justificante, SystemConfig
-from .forms import EmpleadoCreationForm, EmpleadoForm, JustificanteRetardoForm, HorarioForm
+from .models import Empleado, Asistencia, Horario, Justificante, SystemConfig, Pase
+from .forms import EmpleadoCreationForm, EmpleadoForm, JustificanteRetardoForm, HorarioForm, PaseForm
+from .utils_pdf import generar_pase_pdf
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
@@ -760,3 +761,137 @@ def exportar_asistencias_excel(request):
     response["Content-Disposition"] = 'attachment; filename="reporte_asistencias.xlsx"'
     wb.save(response)
     return response
+
+
+# ============= VISTAS PARA PASES DE ENTRADA/SALIDA =============
+
+@login_required
+def crear_pase(request):
+    """Vista para crear un nuevo pase de entrada/salida.
+    Solo accesible por administradores.
+    """
+    if not es_administracion(request.user):
+        return HttpResponseForbidden('No tienes permiso para crear pases.')
+    
+    if request.method == 'POST':
+        form = PaseForm(request.POST)
+        if form.is_valid():
+            pase = form.save(commit=False)
+            pase.creado_por = request.user
+            pase.save()
+            
+            # Generar y guardar PDF
+            try:
+                pdf_content = generar_pase_pdf(pase)
+                nombre_archivo = f'pase_{pase.folio}_{pase.tipo}.pdf'
+                pase.pdf_generado.save(nombre_archivo, pdf_content, save=True)
+                
+                messages.success(request, f'Pase {pase.folio} creado exitosamente.')
+                return redirect('control:listar_pases')
+            except Exception as e:
+                messages.error(request, f'Error al generar PDF: {str(e)}')
+                pase.delete()
+    else:
+        form = PaseForm()
+    
+    return render(request, 'control/administracion/crear_pase.html', {'form': form})
+
+
+@login_required
+def listar_pases(request):
+    """Lista todos los pases creados.
+    Solo accesible por administradores.
+    """
+    if not es_administracion(request.user):
+        return HttpResponseForbidden('No tienes permiso para ver pases.')
+    
+    pases = Pase.objects.all().select_related('empleado', 'creado_por').order_by('-fecha_creacion')
+    
+    # Filtrar por tipo si se proporciona
+    tipo_filtro = request.GET.get('tipo')
+    if tipo_filtro:
+        pases = pases.filter(tipo=tipo_filtro)
+    
+    # Filtrar por empleado si se proporciona
+    empleado_filtro = request.GET.get('empleado')
+    if empleado_filtro:
+        pases = pases.filter(empleado__id=empleado_filtro)
+    
+    contexto = {
+        'pases': pases,
+        'empleados': Empleado.objects.all().order_by('nombre'),
+    }
+    
+    return render(request, 'control/administracion/listar_pases.html', contexto)
+
+
+@login_required
+def descargar_pase_pdf(request, pase_id):
+    """Descarga el PDF del pase."""
+    pase = get_object_or_404(Pase, pk=pase_id)
+    
+    if not es_administracion(request.user):
+        return HttpResponseForbidden('No tienes permiso para descargar pases.')
+    
+    if not pase.pdf_generado:
+        return HttpResponse('El PDF aún no ha sido generado.', status=404)
+    
+    response = HttpResponse(pase.pdf_generado.read(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="pase_{pase.folio}.pdf"'
+    return response
+
+
+@login_required
+def ver_pase(request, pase_id):
+    """Visualiza los detalles de un pase."""
+    pase = get_object_or_404(Pase, pk=pase_id)
+    
+    if not es_administracion(request.user):
+        return HttpResponseForbidden('No tienes permiso para ver pases.')
+    
+    return render(request, 'control/administracion/detalle_pase.html', {'pase': pase})
+
+
+@login_required
+def editar_pase(request, pase_id):
+    """Edita un pase existente."""
+    pase = get_object_or_404(Pase, pk=pase_id)
+    
+    if not es_administracion(request.user):
+        return HttpResponseForbidden('No tienes permiso para editar pases.')
+    
+    if request.method == 'POST':
+        form = PaseForm(request.POST, instance=pase)
+        if form.is_valid():
+            pase = form.save()
+            
+            # Regenerar PDF
+            try:
+                pdf_content = generar_pase_pdf(pase)
+                nombre_archivo = f'pase_{pase.folio}_{pase.tipo}.pdf'
+                pase.pdf_generado.save(nombre_archivo, pdf_content, save=True)
+                messages.success(request, 'Pase actualizado y PDF regenerado.')
+                return redirect('control:ver_pase', pase_id=pase.id)
+            except Exception as e:
+                messages.error(request, f'Error al regenerar PDF: {str(e)}')
+    else:
+        form = PaseForm(instance=pase)
+    
+    return render(request, 'control/administracion/editar_pase.html', {'form': form, 'pase': pase})
+
+
+@login_required
+def eliminar_pase(request, pase_id):
+    """Elimina un pase."""
+    pase = get_object_or_404(Pase, pk=pase_id)
+    
+    if not es_administracion(request.user):
+        return HttpResponseForbidden('No tienes permiso para eliminar pases.')
+    
+    if request.method == 'POST':
+        folio = pase.folio
+        pase.delete()
+        messages.success(request, f'Pase {folio} eliminado.')
+        return redirect('control:listar_pases')
+    
+    return render(request, 'control/administracion/confirmar_eliminar_pase.html', {'pase': pase})

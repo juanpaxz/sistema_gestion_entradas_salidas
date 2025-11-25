@@ -39,4 +39,12 @@ urlpatterns = [
     path('admin/justificantes/', views.validar_justificantes, name='validar_justificantes'),
     path('admin/justificantes/<int:justificante_id>/aprobar/', views.aprobar_justificante, name='aprobar_justificante'),
     path('admin/justificantes/<int:justificante_id>/rechazar/', views.rechazar_justificante, name='rechazar_justificante'),
+    
+    # Pases de entrada/salida
+    path('pases/crear/', views.crear_pase, name='crear_pase'),
+    path('pases/', views.listar_pases, name='listar_pases'),
+    path('pases/<int:pase_id>/', views.ver_pase, name='ver_pase'),
+    path('pases/<int:pase_id>/editar/', views.editar_pase, name='editar_pase'),
+    path('pases/<int:pase_id>/eliminar/', views.eliminar_pase, name='eliminar_pase'),
+    path('pases/<int:pase_id>/descargar/', views.descargar_pase_pdf, name='descargar_pase_pdf'),
 ]

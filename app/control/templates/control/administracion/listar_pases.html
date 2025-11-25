@@ -1,0 +1,119 @@
+{% extends 'control/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>
+                <i class="fas fa-file-alt"></i> Gestión de Pases
+            </h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'control:crear_pase' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Crear Nuevo Pase
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="tipo" class="form-label">Tipo de Pase</label>
+                    <select name="tipo" id="tipo" class="form-select">
+                        <option value="">-- Todos --</option>
+                        <option value="entrada" {% if request.GET.tipo == 'entrada' %}selected{% endif %}>Pase de Entrada</option>
+                        <option value="salida" {% if request.GET.tipo == 'salida' %}selected{% endif %}>Pase de Salida</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="empleado" class="form-label">Empleado</label>
+                    <select name="empleado" id="empleado" class="form-select">
+                        <option value="">-- Todos --</option>
+                        {% for emp in empleados %}
+                            <option value="{{ emp.id }}" {% if request.GET.empleado|stringformat:"d" == emp.id|stringformat:"d" %}selected{% endif %}>
+                                {{ emp.nombre }} {{ emp.apellido }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 align-self-end">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                    <a href="{% url 'control:listar_pases' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-redo"></i> Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de Pases -->
+    {% if pases %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Folio</th>
+                        <th>Empleado</th>
+                        <th>Tipo</th>
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th>Asunto</th>
+                        <th>Creado por</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pase in pases %}
+                        <tr>
+                            <td>
+                                <strong>{{ pase.folio }}</strong>
+                            </td>
+                            <td>
+                                {{ pase.empleado.nombre }} {{ pase.empleado.apellido }}
+                            </td>
+                            <td>
+                                {% if pase.tipo == 'entrada' %}
+                                    <span class="badge bg-info">Entrada</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Salida</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ pase.fecha|date:"d/m/Y" }}</td>
+                            <td>{{ pase.hora|time:"H:i" }}</td>
+                            <td>{{ pase.asunto }}</td>
+                            <td>{{ pase.creado_por.get_full_name }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'control:ver_pase' pase.id %}" class="btn btn-info" title="Ver">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'control:editar_pase' pase.id %}" class="btn btn-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if pase.pdf_generado %}
+                                        <a href="{% url 'control:descargar_pase_pdf' pase.id %}" class="btn btn-success" title="Descargar PDF" download>
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    {% endif %}
+                                    <a href="{% url 'control:eliminar_pase' pase.id %}" class="btn btn-danger" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> No hay pases registrados.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

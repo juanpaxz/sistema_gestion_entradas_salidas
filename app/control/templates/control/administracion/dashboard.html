@@ -72,7 +72,21 @@
     <div class="col-md-6">
       <div class="card shadow-sm">
         <div class="card-body">
-          <h5 class="card-title">📊 Reporte de Asistencias</h5>
+          <h5 class="card-title">� Pases de Entrada/Salida</h5>
+          <p class="text-muted">Genera y gestiona pases de entrada y salida para los empleados.</p>
+          <a href="{% url 'control:listar_pases' %}" class="btn btn-primary">
+            Gestionar Pases
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-4">
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">�📊 Reporte de Asistencias</h5>
           <p class="text-muted">Consulta reportes detallados de asistencias y filtra por empleado, fecha y tipo.</p>
           <a href="{% url 'control:reporte_asistencias' %}" class="btn btn-info">
             Ver Reporte

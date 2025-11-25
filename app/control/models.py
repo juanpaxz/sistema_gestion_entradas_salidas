@@ -232,6 +232,31 @@ class Horario(models.Model):
             return f"{self.nombre} ({self.dias_laborales})"
         return f"Horario {self.pk} ({self.dias_laborales})"
 
+class Pase(models.Model):
+    TIPO_CHOICES = [
+        ('entrada', 'Pase de Entrada'),
+        ('salida', 'Pase de Salida'),
+    ]
+
+    empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE, related_name='pases')
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    folio = models.CharField(max_length=50, unique=True)
+    fecha = models.DateField(default=timezone.now)
+    hora = models.TimeField()
+    hora_reincorporacion = models.TimeField(blank=True, null=True, help_text='Hora de reincorporación (opcional)')
+    asunto = models.CharField(max_length=255)
+    observaciones = models.TextField(blank=True, null=True)
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='pases_creados')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    pdf_generado = models.FileField(upload_to='pases/', blank=True, null=True)
+
+    class Meta:
+        ordering = ['-fecha_creacion']
+
+    def __str__(self):
+        return f"Pase {self.folio} - {self.empleado} ({self.get_tipo_display()})"
+
+
 class SystemConfig(models.Model):
     """Configuración sencilla editable desde admin.
 
