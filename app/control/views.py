@@ -53,7 +53,6 @@ def listar_empleados(request):
     empleados = Empleado.objects.select_related('user').all().order_by('nombre', 'apellido')
     return render(request, 'control/administracion/listar_empleados.html', {'empleados': empleados})
 
-
 @login_required
 def dashboard(request):
     """Dashboard para administradores.
@@ -83,6 +82,9 @@ def dashboard(request):
     total_empleados = Empleado.objects.count()
     activos = Empleado.objects.filter(estado='activo').count()
 
+    # 🔥 NUEVO: obtener empleados sin horario asignado
+    empleados_sin_horario = Empleado.objects.filter(horarios__isnull=True)
+
     # Obtener umbral actual para mostrar en el dashboard
     try:
         cfg = SystemConfig.get_solo()
@@ -94,9 +96,11 @@ def dashboard(request):
         'total_empleados': total_empleados,
         'empleados_activos': activos,
         'retardo_minutos': retardo_actual,
+
+        # 🔥 NUEVO: enviar la lista al template
+        'empleados_sin_horario': empleados_sin_horario,
     }
     return render(request, 'control/administracion/dashboard.html', context)
-
 
 @login_required
 def crear_empleado(request):
@@ -264,6 +268,15 @@ def eliminar_horario(request, horario_id):
         return redirect('control:listar_horarios')
 
     return render(request, 'control/administracion/confirm_delete_horario.html', {'horario': horario})
+
+
+def empleados_sin_horario(request):
+    empleados_con_horario = Horario.objects.values_list('empleado_id', flat=True)
+    empleados_sin = Empleado.objects.exclude(id__in=empleados_con_horario)
+
+    return render(request, 'empleados_sin_horario.html', {
+        'empleados': empleados_sin
+    })
 
 
 def registro_asistencia(request):

@@ -1,5 +1,4 @@
 {% extends 'control/base.html' %}
-
 {% load static %}
 
 {% block title %}Dashboard - Administrador{% endblock %}
@@ -11,16 +10,21 @@
       <div class="d-flex align-items-center justify-content-between">
         <div>
           <h2 class="mb-0">Dashboard</h2>
-          <p class="text-muted mb-0">Resumen rápido del estado del sistema</p>
-        </div>
-        <div><!-- button moved into Empleados card -->
+          <p class="text-muted mb-0">Resumen rapido del estado del sistema</p>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="row g-3">
+  {% if empleados_sin_horario %}
+<div class="alert alert-warning">
+    ⚠ Hay {{ empleados_sin_horario.count }} empleados sin horario asignado.
+    <a href="{% url 'control:listar' %}">Revisar empleados</a>
+</div>
+{% endif %}
 
+
+  <div class="row g-3">
     <div class="col-md-4">
       <div class="card shadow-sm stat-card stat-card-primary">
         <div class="card-body">
@@ -59,7 +63,7 @@
           <h5 class="card-title">📋 Validar Justificantes</h5>
           <p class="text-muted">Revisa y valida los justificantes de retardo que los empleados han subido.</p>
           <a href="{% url 'control:validar_justificantes' %}" class="btn btn-warning">
-            Ir al Panel de Validación
+            Ir al Panel de Validacion
           </a>
         </div>
       </div>
@@ -82,8 +86,8 @@
     <div class="col-md-6">
       <div class="card shadow-sm">
         <div class="card-body">
-          <h5 class="card-title">⚙️ Configuración rápida</h5>
-          <p class="text-muted">Define cuántos minutos de diferencia se consideran retardo al registrar la entrada.</p>
+          <h5 class="card-title">⚙️ Configuracion rapida</h5>
+          <p class="text-muted">Define cuantos minutos de diferencia se consideran retardo al registrar la entrada.</p>
           <form method="post" class="row g-2 align-items-center">
             {% csrf_token %}
             <div class="col-auto">
@@ -106,8 +110,8 @@
     <div class="col-12">
       <div class="card">
         <div class="card-body">
-          <h5 class="card-title">Últimas incidencias</h5>
-          <p class="text-muted">(Aquí se mostrará una lista de incidencias en futuras iteraciones)</p>
+          <h5 class="card-title">Ultimas incidencias</h5>
+          <p class="text-muted">(Aqui se mostrara una lista de incidencias en futuras iteraciones)</p>
         </div>
       </div>
     </div>

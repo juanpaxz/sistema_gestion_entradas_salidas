@@ -35,9 +35,18 @@
                 {% for emp in empleados %}
                 <tr>
                   <td>{{ emp.user.username }}</td>
-                  <td>{{ emp.nombre }} {{ emp.apellido }}</td>
+
+                  <!-- Nombre con el icono si no tiene horario -->
+                  <td>
+                    {{ emp.nombre }} {{ emp.apellido }}
+                    {% if emp.sin_horario %}
+                      <span class="text-warning" title="Sin horario asignado">⚠️</span>
+                    {% endif %}
+                  </td>
+
                   <td>{{ emp.puesto }}</td>
                   <td>{{ emp.rfc }}</td>
+
                   <td>
                     {% if emp.estado == 'activo' %}
                       <span class="badge bg-success">Activo</span>
@@ -45,10 +54,15 @@
                       <span class="badge bg-secondary">Inactivo</span>
                     {% endif %}
                   </td>
+
                   <td>
-                    <a href="{% url 'control:editar' emp.id %}" class="btn btn-sm btn-warning ">Editar</a>
+                    <a href="{% url 'control:editar' emp.id %}" class="btn btn-sm btn-warning">Editar</a>
                     <a href="{% url 'control:eliminar' emp.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                    {% if emp.sin_horario %}
+                      <span class="text-warning ms-2" title="Sin horario asignado">⚠️</span>
+                    {% endif %}
                   </td>
+                  
                 </tr>
                 {% empty %}
                 <tr>

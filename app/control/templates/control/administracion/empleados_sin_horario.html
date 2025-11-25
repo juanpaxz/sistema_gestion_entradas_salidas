@@ -1,0 +1,30 @@
+{% extends 'control/base.html' %}
+{% load static %}
+
+{% block title %}Empleados sin horario{% endblock %}
+
+{% block content %}
+
+<h2>Empleados sin horario asignado</h2>
+
+{% if empleados %}
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Nombre</th>
+        <th>Apellido</th>
+        <th>Puesto</th>
+    </tr>
+
+    {% for emp in empleados %}
+    <tr>
+        <td>{{ emp.nombre }}</td>
+        <td>{{ emp.apellido }}</td>
+        <td>{{ emp.puesto }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p><strong>Todos los empleados tienen un horario asignado.</strong></p>
+{% endif %}
+
+{% endblock %}
