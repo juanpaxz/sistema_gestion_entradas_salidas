@@ -231,6 +231,8 @@ class Horario(models.Model):
         if self.nombre:
             return f"{self.nombre} ({self.dias_laborales})"
         return f"Horario {self.pk} ({self.dias_laborales})"
+    
+
 
 class SystemConfig(models.Model):
     """Configuración sencilla editable desde admin.

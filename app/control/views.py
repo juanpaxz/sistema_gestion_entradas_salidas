@@ -43,15 +43,50 @@ def home(request):
     """Vista principal de la app `control` para verificar que la app responde."""
     return HttpResponse("Control app: funciona correctamente.")
 
+from django.db.models import Q, Count
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseForbidden
+from .models import Empleado
+
 @login_required
 def listar_empleados(request):
-    """Lista los empleados. Acceso solo para administradores."""
+    """Lista los empleados con filtros. Solo administradores."""
     user = request.user
     if not es_administracion(user):
-        return HttpResponseForbidden('No tienes permiso para ver esta página')
+        return HttpResponseForbidden('No tienes permiso para ver esta pagina')
 
-    empleados = Empleado.objects.select_related('user').all().order_by('nombre', 'apellido')
-    return render(request, 'control/administracion/listar_empleados.html', {'empleados': empleados})
+    busqueda = request.GET.get('q', '')
+    estado = request.GET.get('estado', '')
+    sin_horario = request.GET.get('sin_horario', '')
+
+    empleados = Empleado.objects.select_related('user').all()
+
+    # Filtro de busqueda
+    if busqueda:
+        empleados = empleados.filter(
+            Q(nombre__icontains=busqueda) |
+            Q(apellido__icontains=busqueda) |
+            Q(rfc__icontains=busqueda) |
+            Q(user__username__icontains=busqueda)
+        )
+
+    # Filtro estado
+    if estado in ('activo', 'inactivo'):
+        empleados = empleados.filter(estado=estado)
+
+    # Filtro "sin horario"
+    if sin_horario == "1":
+        empleados = empleados.annotate(
+            total_horarios=Count('horarios')
+        ).filter(total_horarios=0)
+
+    for emp in empleados:
+        emp.sin_horario = emp.horarios.count() == 0
+
+    return render(request, 'control/administracion/listar_empleados.html', {
+        'empleados': empleados
+    })
+
 
 @login_required
 def dashboard(request):

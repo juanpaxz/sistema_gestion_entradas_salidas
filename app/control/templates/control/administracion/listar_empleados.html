@@ -5,6 +5,7 @@
 
 {% block content %}
 <div class="container">
+
   <div class="row mb-3 align-items-center">
     <div class="col">
       <h2>Empleados</h2>
@@ -15,11 +16,43 @@
     </div>
   </div>
 
+  
+  <form method="GET" class="row mb-3">
+
+    <div class="col-md-4 mb-2">
+      <input type="text" name="q" class="form-control"
+             placeholder="Buscar por nombre, usuario o RFC"
+             value="{{ request.GET.q }}">
+    </div>
+
+    <div class="col-md-3 mb-2">
+      <select name="estado" class="form-select">
+        <option value="">-- Estado --</option>
+        <option value="activo" {% if request.GET.estado == "activo" %}selected{% endif %}>Activo</option>
+        <option value="inactivo" {% if request.GET.estado == "inactivo" %}selected{% endif %}>Inactivo</option>
+      </select>
+    </div>
+
+    <!-- Sin horario -->
+    <div class="col-md-3 mb-2">
+      <select name="sin_horario" class="form-select">
+        <option value="">-- Horario --</option>
+        <option value="1" {% if request.GET.sin_horario == "1" %}selected{% endif %}>Sin horario asignado</option>
+      </select>
+    </div>
+
+    <div class="col-md-2 mb-2">
+      <button class="btn btn-secondary w-100">Filtrar</button>
+    </div>
+  </form>
+
+
   <div class="row">
     <div class="col-12">
       <div class="card">
         <div class="card-body p-0">
           <div class="table-responsive">
+
             <table class="table table-hover mb-0">
               <thead class="table">
                 <tr>
@@ -36,7 +69,6 @@
                 <tr>
                   <td>{{ emp.user.username }}</td>
 
-                  <!-- Nombre con el icono si no tiene horario -->
                   <td>
                     {{ emp.nombre }} {{ emp.apellido }}
                     {% if emp.sin_horario %}
@@ -62,19 +94,23 @@
                       <span class="text-warning ms-2" title="Sin horario asignado">⚠️</span>
                     {% endif %}
                   </td>
-                  
+
                 </tr>
                 {% empty %}
                 <tr>
-                  <td colspan="6" class="text-center text-muted p-4">No hay empleados registrados.</td>
+                  <td colspan="6" class="text-center text-muted p-4">
+                    No hay empleados registrados.
+                  </td>
                 </tr>
                 {% endfor %}
               </tbody>
             </table>
+
           </div>
         </div>
       </div>
     </div>
   </div>
+
 </div>
 {% endblock %}
