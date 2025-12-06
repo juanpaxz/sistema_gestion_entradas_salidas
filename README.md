@@ -174,4 +174,6 @@ Una vez finalizado, ya podrás acceder al sistema seleccionado.
 
 docker compose exec gestion_de_entradas /env/bin/python manage.py loaddata control/fixtures/datos_iniciales.json
 
+docker compose exec gestion_de_entradas /env/bin/python manage.py loaddata control/fixtures/asistencias.json
+
 

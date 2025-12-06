@@ -10,12 +10,19 @@ from django.db import IntegrityError
 from datetime import datetime, date
 import datetime as _dt
 import logging
+import json
 from .models import Empleado, Asistencia, Horario, Justificante, SystemConfig, Pase
 from .forms import EmpleadoCreationForm, EmpleadoForm, JustificanteRetardoForm, HorarioForm, PaseForm
 from .utils_pdf import generar_pase_pdf
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from io import BytesIO
+import calendar
 
 
 # Configurar logger para la aplicación
@@ -67,6 +74,9 @@ def dashboard(request):
         return HttpResponseForbidden('No tienes permiso para ver esta página')
 
     # Si se envía un formulario para actualizar la configuración (umbral de retardo)
+        # Export PDF (monthly) takes precedence
+        if request.GET.get("exportar") == "pdf":
+            return exportar_asistencias_pdf(request)
     if request.method == 'POST':
         ret_min = request.POST.get('retardo_minutos')
         if ret_min is not None:
@@ -102,6 +112,52 @@ def dashboard(request):
         'empleados_sin_horario': empleados_sin_horario,
     }
     return render(request, 'control/administracion/dashboard.html', context)
+
+
+@login_required
+def systemconfig_api(request):
+    """API simple para obtener/actualizar la configuración del sistema (umbral de retardo).
+
+    GET: devuelve JSON {retardo_minutos: N}
+    POST: espera 'retardo_minutos' en form-data o JSON y actualiza el valor.
+    Solo accesible para usuarios del grupo 'administracion' o superusers.
+    """
+    user = request.user
+    if not (user.is_superuser or user.groups.filter(name='administracion').exists()):
+        return HttpResponseForbidden('No tienes permiso para acceder a esta API')
+
+    try:
+        cfg = SystemConfig.get_solo()
+    except Exception:
+        cfg = None
+
+    if request.method == 'GET':
+        return JsonResponse({'retardo_minutos': cfg.retardo_minutos if cfg else 0})
+
+    # POST: actualizar
+    if request.method == 'POST':
+        # soportar form-data o JSON
+        val = None
+        try:
+            if request.POST.get('retardo_minutos') is not None:
+                val = int(request.POST.get('retardo_minutos'))
+            else:
+                payload = json.loads(request.body.decode('utf-8') or '{}')
+                if 'retardo_minutos' in payload:
+                    val = int(payload.get('retardo_minutos'))
+        except Exception:
+            return JsonResponse({'error': 'Valor inválido'}, status=400)
+
+        if val is None:
+            return JsonResponse({'error': 'Falta retardo_minutos'}, status=400)
+
+        if cfg is None:
+            cfg = SystemConfig.objects.create(retardo_minutos=max(0, val))
+        else:
+            cfg.retardo_minutos = max(0, val)
+            cfg.save()
+
+        return JsonResponse({'retardo_minutos': cfg.retardo_minutos})
 
 @login_required
 def crear_empleado(request):
@@ -512,44 +568,117 @@ def asistencia_events(request):
 
 @login_required
 def reporte_asistencias(request):
-
-    if request.GET.get("exportar") == "excel":
-        return exportar_asistencias_excel(request)
-
     """Generar reporte de asistencias (solo administradores)."""
+    # Si se solicita exportar a PDF, delegar a la función de exportación
+    if request.GET.get('exportar') == 'pdf':
+        return exportar_asistencias_pdf(request)
     if not request.user.groups.filter(name='administracion').exists():
         return HttpResponseForbidden('No tienes permiso para ver esta página')
-
-    # Obtener parámetros de filtrado
-    fecha_inicio = request.GET.get('fecha_inicio')
-    fecha_fin = request.GET.get('fecha_fin')
+    # Obtener parámetros de filtrado mínimos (empleado)
     empleado_id = request.GET.get('empleado_id')
-    tipo = request.GET.get('tipo')
 
-    # Construir el query base
+    # Construir el query base y aplicar filtro por empleado si se indicó
     asistencias = Asistencia.objects.all().select_related('empleado')
-
-    # Aplicar filtros si existen
-    if fecha_inicio:
-        asistencias = asistencias.filter(fecha__gte=fecha_inicio)
-    if fecha_fin:
-        asistencias = asistencias.filter(fecha__lte=fecha_fin)
     if empleado_id:
         asistencias = asistencias.filter(empleado_id=empleado_id)
+
+    # Obtener lista de empleados para el selector
+    empleados = Empleado.objects.filter(estado='activo').order_by('nombre')
+
+    return render(request, 'control/administracion/reporte.html', {
+        'asistencias': asistencias,
+        'empleados': empleados,
+        'empleado_id': empleado_id,
+    })
+
+
+def exportar_asistencias_pdf(request):
+    """Exportar reporte mensual de asistencias a PDF.
+
+    Parámetros esperados (GET):
+    - empleado_id: id del empleado (requerido)
+    - mes_anio: string YYYY-MM (opcional). Si no se provee, se usa el mes actual.
+    """
+    if not request.user.groups.filter(name='administracion').exists() and not request.user.is_superuser:
+        return HttpResponseForbidden('No tienes permiso para ver este reporte')
+
+    empleado_id = request.GET.get('empleado_id')
+    if not empleado_id:
+        return HttpResponse('Debe indicar el empleado para generar el reporte mensual.', status=400)
+
+    mes_anio = request.GET.get('mes_anio')  # formato YYYY-MM
+    tipo = request.GET.get('tipo')
+
+    # Determinar rango de fechas
+    if mes_anio:
+        try:
+            year, month = map(int, mes_anio.split('-'))
+        except Exception:
+            return HttpResponse('Formato de mes inválido. Use YYYY-MM.', status=400)
+    else:
+        today = date.today()
+        year = today.year
+        month = today.month
+
+    # primer y ultimo dia
+    first_day = date(year, month, 1)
+    last_day = date(year, month, calendar.monthrange(year, month)[1])
+
+    asistencias = Asistencia.objects.filter(empleado_id=empleado_id, fecha__gte=first_day, fecha__lte=last_day).select_related('empleado')
     if tipo:
         asistencias = asistencias.filter(tipo=tipo)
 
-    # Obtener lista de empleados para el filtro
-    empleados = Empleado.objects.filter(estado='activo').order_by('nombre')
+    # Preparar PDF
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=36, bottomMargin=36)
+    styles = getSampleStyleSheet()
+    elements = []
 
-    return render(request, 'control/asistencias/reporte.html', {
-        'asistencias': asistencias,
-        'empleados': empleados,
-        'fecha_inicio': fecha_inicio,
-        'fecha_fin': fecha_fin,
-        'empleado_id': empleado_id,
-        'tipo': tipo
-    })
+    empleado_obj = None
+    try:
+        empleado_obj = Empleado.objects.get(pk=empleado_id)
+        title = f"Reporte mensual - {empleado_obj.nombre} {empleado_obj.apellido} - {year}-{str(month).zfill(2)}"
+    except Empleado.DoesNotExist:
+        title = f"Reporte mensual - Empleado {empleado_id} - {year}-{str(month).zfill(2)}"
+
+    elements.append(Paragraph(title, styles['Title']))
+    elements.append(Spacer(1, 12))
+
+    # Tabla encabezados
+    data = [["Fecha", "Entrada", "Salida", "Tipo", "Diferencia(min)", "Observaciones"]]
+
+    for a in asistencias.order_by('fecha'):
+        fecha_str = a.fecha.strftime('%d/%m/%Y')
+        entrada = a.hora_entrada.strftime('%H:%M:%S') if a.hora_entrada else '-'
+        salida = a.hora_salida.strftime('%H:%M:%S') if a.hora_salida else '-'
+        dif = None
+        try:
+            dif = a.compute_diferencia_minutes()
+        except Exception:
+            dif = ''
+        dif_str = str(dif) if dif is not None else '-'
+        data.append([fecha_str, entrada, salida, a.tipo.title(), dif_str, a.observaciones or '-'])
+
+    table = Table(data, colWidths=[72, 72, 72, 72, 72, 140])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#c70f02')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('GRID', (0,0), (-1,-1), 0.25, colors.grey),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+    ]))
+
+    elements.append(table)
+    doc.build(elements)
+
+    buffer.seek(0)
+    filename = f"reporte_asistencias_{empleado_id}_{year}_{str(month).zfill(2)}.pdf"
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
 
 
 @login_required
@@ -669,12 +798,9 @@ def rechazar_justificante(request, justificante_id):
     })
 
 
-from django.http import HttpResponse
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
-from datetime import datetime
-from .models import Asistencia, Empleado
 
 @login_required
 def exportar_asistencias_excel(request):

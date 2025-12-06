@@ -18,8 +18,6 @@ urlpatterns = [
     path('asistencia/reporte/', views.reporte_asistencias, name='reporte_asistencias'),
     path('asistencia/reporte/exportar/', views.exportar_asistencias_excel, name='exportar_asistencias_excel'),
     path('empleados/sin-horario/', views.empleados_sin_horario, name='empleados_sin_horario'),
-
-
     # Rutas para el control de asistencia
     path('', views.registro_asistencia, name='registro_asistencia'),
     path('entrada/', views.registrar_entrada, name='registrar_entrada'),
@@ -29,17 +27,16 @@ urlpatterns = [
     path('horarios/crear/', views.crear_horario, name='crear_horario'),
     path('horarios/<int:horario_id>/editar/', views.editar_horario, name='editar_horario'),
     path('horarios/<int:horario_id>/eliminar/', views.eliminar_horario, name='eliminar_horario'),
-
     # Dashboard específico para empleados (mapea al historial de asistencias)
     path('empleado/events/', views.asistencia_events, name='asistencia_events'),
     path('empleado/dashboard/', views.ver_asistencias, name='empleado_dashboard'),
     path('asistencia/<int:asistencia_id>/subir-justificante/', views.subir_justificante, name='subir_justificante'),
-    
     # Validación de justificantes (solo admin)
     path('admin/justificantes/', views.validar_justificantes, name='validar_justificantes'),
     path('admin/justificantes/<int:justificante_id>/aprobar/', views.aprobar_justificante, name='aprobar_justificante'),
     path('admin/justificantes/<int:justificante_id>/rechazar/', views.rechazar_justificante, name='rechazar_justificante'),
-    
+    # API para configuración del sistema (solo admin)
+    path('api/systemconfig/', views.systemconfig_api, name='systemconfig_api'),
     # Pases de entrada/salida
     path('pases/crear/', views.crear_pase, name='crear_pase'),
     path('pases/', views.listar_pases, name='listar_pases'),

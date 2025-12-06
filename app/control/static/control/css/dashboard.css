@@ -86,21 +86,16 @@
   outline-offset: 4px;
 }
 
-/* Dark theme removed — using light styles only */
-
-/* Make footer match the navbar gradient (use same blue gradient as navbar) */
 footer.footer {
-  background: linear-gradient(90deg, #0d6efd 0%, #4da3ff 100%);
+  background: linear-gradient(90deg, #c70f02 0%, rgba(165,11,1,0.95) 100%);
   color: #ffffff;
   border-top: 1px solid rgba(0,0,0,0.08);
 }
 
 footer.footer .text-muted {
-  color: rgba(255,255,255,0.9);
+  color: rgba(255,255,255,0.95);
 }
 
-/* If theme is dark, ensure footer border-color subtle */
-/* end */
 
 
 

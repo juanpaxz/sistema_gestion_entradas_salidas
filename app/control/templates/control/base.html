@@ -15,10 +15,10 @@
     {% block extra_head %}{% endblock %}
 </head>
 
-<body class="d-flex flex-column min-vh-100">
+<body class="d-flex flex-column h-100">
     {% include 'control/_navbar.html' %}
 
-    <main class="container mt-4">
+    <main class="container mt-0">
         {% if messages %}
         <div class="messages">
             {% for message in messages %}
