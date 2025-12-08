@@ -1,29 +1,26 @@
-from django.shortcuts import render
+"""Vistas de la app `control`."""
+
+# Standard library
+import calendar
+import json
+import logging
+from datetime import datetime, date
+import datetime as _dt
+
+# Django imports
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.models import Group
 from django.utils import timezone
 from django.contrib.auth.views import LoginView
 from django.db import IntegrityError
-from datetime import datetime, date
-import datetime as _dt
-import logging
-import json
+
+# Local app
 from .models import Empleado, Asistencia, Horario, Justificante, SystemConfig, Pase
 from .forms import EmpleadoCreationForm, EmpleadoForm, JustificanteRetardoForm, HorarioForm, PaseForm
-from .utils_pdf import generar_pase_pdf
-from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
-from openpyxl.utils import get_column_letter
-from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
-from io import BytesIO
-import calendar
-
+from .utils_pdf import generar_pase_pdf, generar_reporte_asistencias_pdf
 
 # Configurar logger para la aplicación
 logger = logging.getLogger(__name__)
@@ -386,12 +383,6 @@ def registrar_entrada(request):
         umbral = int(cfg.retardo_minutos or 0)
     except Exception:
         umbral = 0
-    
-    print("DEBUG >>> hora_entrada:", asistencia.hora_entrada)
-    print("DEBUG >>> mins calculados:", mins)
-    print("DEBUG >>> tipo mins:", type(mins))
-    print("DEBUG >>> umbral minutos:", umbral)
-    print("DEBUG >>> ENTRO AL IF?:", mins is not None and mins > umbral)
 
     # Si la diferencia supera el umbral, marcar retardo
     if mins is not None and mins > umbral:
@@ -401,7 +392,7 @@ def registrar_entrada(request):
     # Formatear hora para la respuesta (hora almacenada es TimeField)
     hora_str = None
     if isinstance(asistencia.hora_entrada, _dt.time):
-        hora_str = asistencia.hora_entrada.strftime('%H:%M:%S')
+        hora_str = asistencia.hora_entrada.strftime('%H:%M')
 
     return JsonResponse({
         'status': 'success',
@@ -463,8 +454,8 @@ def registrar_salida(request):
         return JsonResponse({
             'status': 'success',
             'message': 'Salida registrada exitosamente',
-            # Mostrar la hora en la zona local del servidor
-            'hora': hora_salida.strftime('%H:%M:%S') if hora_salida else None
+            # Mostrar la hora en la zona local del servidor (sin segundos)
+            'hora': hora_salida.strftime('%H:%M') if hora_salida else None
         })
 
     except Asistencia.DoesNotExist:
@@ -628,57 +619,15 @@ def exportar_asistencias_pdf(request):
     if tipo:
         asistencias = asistencias.filter(tipo=tipo)
 
-    # Preparar PDF
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=36, bottomMargin=36)
-    styles = getSampleStyleSheet()
-    elements = []
-
-    empleado_obj = None
+    # Delegar la generación del PDF a la utilidad en utils_pdf.py
     try:
-        empleado_obj = Empleado.objects.get(pk=empleado_id)
-        title = f"Reporte mensual - {empleado_obj.nombre} {empleado_obj.apellido} - {year}-{str(month).zfill(2)}"
-    except Empleado.DoesNotExist:
-        title = f"Reporte mensual - Empleado {empleado_id} - {year}-{str(month).zfill(2)}"
-
-    elements.append(Paragraph(title, styles['Title']))
-    elements.append(Spacer(1, 12))
-
-    # Tabla encabezados
-    data = [["Fecha", "Entrada", "Salida", "Tipo", "Diferencia(min)", "Observaciones"]]
-
-    for a in asistencias.order_by('fecha'):
-        fecha_str = a.fecha.strftime('%d/%m/%Y')
-        entrada = a.hora_entrada.strftime('%H:%M:%S') if a.hora_entrada else '-'
-        salida = a.hora_salida.strftime('%H:%M:%S') if a.hora_salida else '-'
-        dif = None
-        try:
-            dif = a.compute_diferencia_minutes()
-        except Exception:
-            dif = ''
-        dif_str = str(dif) if dif is not None else '-'
-        data.append([fecha_str, entrada, salida, a.tipo.title(), dif_str, a.observaciones or '-'])
-
-    table = Table(data, colWidths=[72, 72, 72, 72, 72, 140])
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#c70f02')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
-        ('GRID', (0,0), (-1,-1), 0.25, colors.grey),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-    ]))
-
-    elements.append(table)
-    doc.build(elements)
-
-    buffer.seek(0)
-    filename = f"reporte_asistencias_{empleado_id}_{year}_{str(month).zfill(2)}.pdf"
-    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    return response
+        pdf_buffer, filename = generar_reporte_asistencias_pdf(asistencias, empleado_id, year, month)
+        response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+    except Exception as e:
+        logger.error(f"Error generando PDF de asistencias: {str(e)}", exc_info=True)
+        return HttpResponse(f"Error generando PDF: {str(e)}", status=500)
 
 
 @login_required
@@ -796,99 +745,6 @@ def rechazar_justificante(request, justificante_id):
         'justificante': justificante,
         'accion': 'rechazar'
     })
-
-
-from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
-from openpyxl.utils import get_column_letter
-
-@login_required
-def exportar_asistencias_excel(request):
-
-    fecha_inicio = request.GET.get("fecha_inicio")
-    fecha_fin = request.GET.get("fecha_fin")
-    empleado_id = request.GET.get("empleado")
-    tipo = request.GET.get("tipo")
-
-    asistencias = Asistencia.objects.select_related("empleado").all()
-
-    if fecha_inicio:
-        asistencias = asistencias.filter(fecha__gte=fecha_inicio)
-
-    if fecha_fin:
-        asistencias = asistencias.filter(fecha__lte=fecha_fin)
-
-    if empleado_id and empleado_id != "todos":
-        asistencias = asistencias.filter(empleado_id=empleado_id)
-
-    if tipo and tipo != "todos":
-        asistencias = asistencias.filter(tipo=tipo)
-
-    # Crear Excel
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Asistencias"
-
-    ws.merge_cells("A1:F1")
-    titulo = ws["A1"]
-    titulo.value = "Reporte de Asistencias"
-    titulo.font = Font(size=16, bold=True)
-    titulo.alignment = Alignment(horizontal="center")
-
-    encabezados = ["Fecha", "Empleado", "Entrada", "Salida", "Tipo", "Observaciones"]
-    ws.append(encabezados)
-
-    header_fill = PatternFill(start_color="DDDDDD", fill_type="solid")
-    header_font = Font(bold=True)
-    header_alignment = Alignment(horizontal="center")
-
-    for col in range(1, len(encabezados) + 1):
-        c = ws.cell(row=2, column=col)
-        c.fill = header_fill
-        c.font = header_font
-        c.alignment = header_alignment
-
-    for a in asistencias:
-        ws.append([
-            a.fecha.strftime("%d/%m/%Y"),
-            str(a.empleado),
-            a.hora_entrada.strftime("%H:%M:%S") if a.hora_entrada else "-",
-            a.hora_salida.strftime("%H:%M:%S") if a.hora_salida else "-",
-            a.get_tipo_display(),
-            a.observaciones or "-"
-        ])
-
-    thin = Border(
-        left=Side(style="thin"),
-        right=Side(style="thin"),
-        top=Side(style="thin"),
-        bottom=Side(style="thin")
-    )
-
-    max_row = ws.max_row
-    max_col = ws.max_column
-
-    for row in ws.iter_rows(min_row=2, max_row=max_row, min_col=1, max_col=max_col):
-        for cell in row:
-            cell.border = thin
-
-    for col in ws.columns:
-        max_len = 0
-        col_letter = get_column_letter(col[0].column)
-        for cell in col:
-            val = str(cell.value)
-            if val:
-                max_len = max(max_len, len(val))
-        ws.column_dimensions[col_letter].width = max_len + 6
-
-    ws.auto_filter.ref = f"A2:{get_column_letter(max_col)}{max_row}"
-
-    response = HttpResponse(content_type="application/ms-excel")
-    response["Content-Disposition"] = 'attachment; filename="reporte_asistencias.xlsx"'
-    wb.save(response)
-    return response
-
-
 # ============= VISTAS PARA PASES DE ENTRADA/SALIDA =============
 
 @login_required

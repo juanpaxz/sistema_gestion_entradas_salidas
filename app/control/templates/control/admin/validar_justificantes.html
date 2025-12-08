@@ -80,8 +80,13 @@
                     </td>
                     <td>{{ justificante.asistencia.fecha|date:"d/m/Y" }}</td>
                     <td>
-                        <span class="badge {% if justificante.asistencia.tipo == 'retardo' %}bg-warning{% endif %}">
-                            {{ justificante.asistencia.tipo|title }}
+                        <span class="badge 
+                            {% if justificante.asistencia.tipo == 'normal' %}bg-success
+                            {% elif justificante.asistencia.tipo == 'retardo' %}bg-warning
+                            {% elif justificante.asistencia.tipo == 'falta' %}bg-danger
+                            {% else %}bg-info
+                            {% endif %}">
+                            {{ justificante.asistencia.get_tipo_display }}
                         </span>
                     </td>
                     <td>{{ justificante.fecha_envio|date:"d/m/Y H:i" }}</td>

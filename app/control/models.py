@@ -63,7 +63,7 @@ class Asistencia(models.Model):
         ('normal', 'Normal'),
         ('retardo', 'Retardo'),
         ('falta', 'Falta'),
-        ('justificada', 'Falta Justificada'),
+        ('justificada', 'Justificada'),
     ]
     
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='normal')

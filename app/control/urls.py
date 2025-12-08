@@ -16,7 +16,6 @@ urlpatterns = [
     path('<int:empleado_id>/editar/', views.editar_empleado, name='editar'),
     path('<int:empleado_id>/eliminar/', views.eliminar_empleado, name='eliminar'),
     path('asistencia/reporte/', views.reporte_asistencias, name='reporte_asistencias'),
-    path('asistencia/reporte/exportar/', views.exportar_asistencias_excel, name='exportar_asistencias_excel'),
     path('empleados/sin-horario/', views.empleados_sin_horario, name='empleados_sin_horario'),
     # Rutas para el control de asistencia
     path('', views.registro_asistencia, name='registro_asistencia'),
