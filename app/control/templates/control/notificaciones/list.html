@@ -1,0 +1,31 @@
+{% extends 'control/base.html' %}
+{% block content %}
+<div class="container py-4">
+  <h2>Notificaciones</h2>
+  <div class="list-group">
+    {% for n in notificaciones %}
+      <div class="list-group-item d-flex justify-content-between align-items-start {% if not n.leido %}bg-light{% endif %}">
+        <div>
+          <h5 class="mb-1">{{ n.titulo }}</h5>
+          <p class="mb-1">{{ n.mensaje|linebreaksbr }}</p>
+          {% if n.enlace %}
+            <a href="{{ n.enlace }}">Abrir</a>
+          {% endif %}
+          <small class="text-muted d-block">{{ n.creado|date:"d/m/Y H:i" }}</small>
+        </div>
+        <div>
+          {% if not n.leido %}
+          <form method="post" action="{% url 'control:notificacion_marcar_leida' n.id %}">{% csrf_token %}
+            <button class="btn btn-sm btn-outline-primary" type="submit">Marcar leída</button>
+          </form>
+          {% else %}
+            <span class="badge bg-success">Leída</span>
+          {% endif %}
+        </div>
+      </div>
+    {% empty %}
+      <div class="text-muted">No tienes notificaciones.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

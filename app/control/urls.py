@@ -44,4 +44,7 @@ urlpatterns = [
     path('pases/<int:pase_id>/editar/', views.editar_pase, name='editar_pase'),
     path('pases/<int:pase_id>/eliminar/', views.eliminar_pase, name='eliminar_pase'),
     path('pases/<int:pase_id>/descargar/', views.descargar_pase_pdf, name='descargar_pase_pdf'),
+    # Notificaciones (empleado)
+    path('notificaciones/', views.notificaciones_list, name='notificaciones'),
+    path('notificaciones/<int:notif_id>/marcar-leida/', views.notificacion_marcar_leida, name='notificacion_marcar_leida'),
 ]

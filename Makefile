@@ -55,3 +55,8 @@ superuser: ## Crea un superusuario para gestion_de_entradas
 # Logs
 logs:
 	docker compose logs -f gestion_de_entradas
+
+# -----------------------
+# Notificaciones
+# -----------------------
+

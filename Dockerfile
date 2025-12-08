@@ -12,7 +12,8 @@ RUN apt-get update && apt-get upgrade -y && \
     pkg-config \
     gcc \
     mariadb-client \
-    netcat-openbsd && \
+    netcat-openbsd \
+    cron && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Configurar zona horaria
@@ -30,6 +31,9 @@ RUN python3 -m venv /env && \
 
 # Copiar el resto del código
 COPY . /app
+
+# Asegurar que el script de cron es ejecutable
+RUN if [ -f /app/scripts/cron_start.sh ]; then chmod +x /app/scripts/cron_start.sh; fi
 
 # Puerto de escucha
 EXPOSE 80

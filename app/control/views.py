@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.models import Group
 from django.utils import timezone
 from django.contrib.auth.views import LoginView
+from django.urls import reverse
 from django.db import IntegrityError
 from datetime import datetime, date
 import datetime as _dt
@@ -41,7 +42,9 @@ class CustomLoginView(LoginView):
         elif user.groups.filter(name='supervisores').exists():
             return '/supervisores/panel/'
         else:
-            return '/default/'  # Página por defecto
+            # Si el usuario no pertenece a ningún grupo conocido, redirigimos
+            # a la página pública de registro de asistencia (existe en urlpatterns).
+            return reverse('control:registro_asistencia')
 
 def es_administracion(user):
     return user.groups.filter(name='administracion').exists()
@@ -128,7 +131,6 @@ def dashboard(request):
     total_empleados = Empleado.objects.count()
     activos = Empleado.objects.filter(estado='activo').count()
 
-    # 🔥 NUEVO: obtener empleados sin horario asignado
     empleados_sin_horario = Empleado.objects.filter(horarios__isnull=True)
 
     # Obtener umbral actual para mostrar en el dashboard
@@ -524,6 +526,12 @@ def ver_asistencias(request):
             asistencias = Asistencia.objects.filter(empleado=empleado)
             # Obtener el horario aplicable para la fecha actual
             horario_para_hoy = empleado.get_horario_para_fecha()
+            # Obtener notificaciones del empleado (no leídas primero)
+            try:
+                from .models import Notificacion
+                notificaciones = Notificacion.objects.filter(empleado=empleado)
+            except Exception:
+                notificaciones = []
         except Empleado.DoesNotExist:
             return HttpResponseForbidden('No tienes acceso a esta página')
 
@@ -538,6 +546,7 @@ def ver_asistencias(request):
         context.update({
             'empleado': empleado,
             'horario_para_hoy': horario_para_hoy,
+            'notificaciones': notificaciones,
         })
 
     return render(request, 'control/asistencias/empleado_dashboard.html', context)
@@ -1056,3 +1065,36 @@ def eliminar_pase(request, pase_id):
         return redirect('control:listar_pases')
     
     return render(request, 'control/administracion/confirmar_eliminar_pase.html', {'pase': pase})
+
+
+@login_required
+def notificaciones_list(request):
+    """Lista todas las notificaciones (leídas y no leídas) del empleado autenticado."""
+    try:
+        empleado = Empleado.objects.get(user=request.user)
+    except Empleado.DoesNotExist:
+        return HttpResponseForbidden('No tienes acceso a esta página')
+
+    notifs = empleado.notificaciones.all()
+    return render(request, 'control/notificaciones/list.html', {'notificaciones': notifs})
+
+
+@login_required
+def notificacion_marcar_leida(request, notif_id):
+    """Marca una notificación como leída via POST desde el empleado."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)
+
+    try:
+        empleado = Empleado.objects.get(user=request.user)
+        notif = empleado.notificaciones.get(pk=notif_id)
+        notif.marcar_como_leida()
+        # Si la petición viene por AJAX devolvemos JSON, si viene de un form normal redirigimos
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'success'})
+        from django.shortcuts import redirect
+        return redirect('control:notificaciones')
+    except Empleado.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Empleado no encontrado'}, status=400)
+    except Exception:
+        return JsonResponse({'status': 'error'}, status=400)

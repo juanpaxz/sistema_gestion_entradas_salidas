@@ -8,6 +8,37 @@
 
     {% if empleado %}
     <div class="mb-3">
+      <!-- Notificaciones del empleado -->
+      {% if notificaciones %}
+      <div class="card mb-3">
+        <div class="card-body">
+          <h5 class="card-title">Notificaciones</h5>
+          <ul class="list-group list-group-flush">
+            {% for n in notificaciones|slice:":5" %}
+            <li class="list-group-item d-flex justify-content-between align-items-start {% if not n.leido %}bg-light{% endif %}">
+              <div>
+                <strong>{{ n.titulo }}</strong>
+                <div class="small text-muted">{{ n.creado|date:"d/m/Y H:i" }}</div>
+                <div class="mt-1">{{ n.mensaje }}</div>
+              </div>
+              <div>
+                {% if not n.leido %}
+                  <form method="post" action="{% url 'control:notificacion_marcar_leida' n.id %}">{% csrf_token %}
+                    <button class="btn btn-sm btn-outline-primary" type="submit">Marcar leída</button>
+                  </form>
+                {% else %}
+                  <span class="badge bg-success">Leída</span>
+                {% endif %}
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+          {% if notificaciones|length > 5 %}
+            <a class="btn btn-link mt-2" href="{% url 'control:notificaciones' %}">Ver todas</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
       <h5>Tu horario asignado</h5>
       {% if horario_para_hoy %}
         <div class="card p-2 mb-2 border-primary">

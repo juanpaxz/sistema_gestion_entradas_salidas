@@ -231,6 +231,32 @@ class Horario(models.Model):
         if self.nombre:
             return f"{self.nombre} ({self.dias_laborales})"
         return f"Horario {self.pk} ({self.dias_laborales})"
+
+
+class Notificacion(models.Model):
+    """Notificaciones internas para empleados.
+
+    Uso: notificaciones del sistema (recordatorios, aprobaciones, mensajes).
+    """
+    empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE, related_name='notificaciones')
+    titulo = models.CharField(max_length=200)
+    mensaje = models.TextField()
+    enlace = models.CharField(max_length=400, blank=True, null=True, help_text='URL relativa dentro del sistema')
+    leido = models.BooleanField(default=False)
+    creado = models.DateTimeField(auto_now_add=True)
+    periodo = models.CharField(max_length=7, null=True, blank=True, help_text='Periodo en formato YYYY-MM para notificaciones periódicas')
+
+    class Meta:
+        ordering = ['-creado']
+        unique_together = (('empleado', 'periodo', 'titulo'),)
+
+    def __str__(self):
+        return f"Notificación {self.pk} -> {self.empleado} - {'Leída' if self.leido else 'Nueva'}"
+
+    def marcar_como_leida(self):
+        if not self.leido:
+            self.leido = True
+            self.save()
     
 
 

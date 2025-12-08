@@ -59,9 +59,24 @@ services:
     networks:
       - default
 
+  cron:
+    image: gestion_de_entradas
+    container_name: gestion_de_entradas_cron
+    volumes:
+      - ./app:/app
+    depends_on:
+      - gestion_de_entradas
+    entrypoint: ["/bin/bash", "/app/scripts/cron_start.sh"]
+    restart: unless-stopped
+    networks:
+      - default
+
 volumes:
   db:
 
 networks:
   default:
     driver: bridge
+
+ 
+
