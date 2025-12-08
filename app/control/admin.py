@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Empleado, Asistencia, Justificante, Horario, SystemConfig
+from .models import Empleado, Asistencia, Justificante, Horario, SystemConfig, Pase
 
 
 @admin.register(Justificante)
@@ -83,3 +83,40 @@ class SystemConfigAdmin(admin.ModelAdmin):
 	def has_add_permission(self, request):
 		# permitir añadir solamente si no existe ninguna
 		return SystemConfig.objects.count() == 0
+
+
+@admin.register(Pase)
+class PaseAdmin(admin.ModelAdmin):
+	list_display = ('folio', 'empleado_nombre', 'tipo', 'fecha', 'hora', 'descargar_pdf')
+	list_filter = ('tipo', 'fecha', 'empleado')
+	search_fields = ('folio', 'empleado__nombre', 'empleado__apellido')
+	readonly_fields = ('creado_por', 'fecha_creacion', 'pdf_link')
+	fieldsets = (
+		('Información del Pase', {
+			'fields': ('empleado', 'tipo', 'folio', 'creado_por', 'fecha_creacion')
+		}),
+		('Detalles', {
+			'fields': ('fecha', 'hora', 'hora_reincorporacion', 'asunto', 'observaciones')
+		}),
+		('PDF', {
+			'fields': ('pdf_link',)
+		}),
+	)
+
+	def empleado_nombre(self, obj):
+		return f"{obj.empleado.nombre} {obj.empleado.apellido}"
+	empleado_nombre.short_description = 'Empleado'
+
+	def descargar_pdf(self, obj):
+		if obj.pdf_generado:
+			return f'<a href="{obj.pdf_generado.url}" download>📄 Descargar</a>'
+		return '-'
+	descargar_pdf.short_description = 'PDF'
+	descargar_pdf.allow_tags = True
+
+	def pdf_link(self, obj):
+		if obj.pdf_generado:
+			return f'<a href="{obj.pdf_generado.url}" target="_blank">📥 Ver/Descargar PDF</a>'
+		return 'PDF no generado'
+	pdf_link.short_description = 'Archivo PDF'
+	pdf_link.allow_tags = True

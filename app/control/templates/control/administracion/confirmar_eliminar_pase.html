@@ -1,0 +1,48 @@
+{% extends 'control/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <p class="mb-4">
+                        ¿Estás seguro de que deseas eliminar el pase <strong>{{ pase.folio }}</strong>?
+                    </p>
+                    
+                    <div class="alert alert-info">
+                        <strong>Información del Pase:</strong>
+                        <ul class="mb-0">
+                            <li>Folio: {{ pase.folio }}</li>
+                            <li>Empleado: {{ pase.empleado.nombre }} {{ pase.empleado.apellido }}</li>
+                            <li>Tipo: {{ pase.get_tipo_display }}</li>
+                            <li>Fecha: {{ pase.fecha|date:"d/m/Y" }}</li>
+                        </ul>
+                    </div>
+
+                    <p class="text-danger">
+                        <strong>⚠️ Esta acción no se puede deshacer.</strong>
+                    </p>
+
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Eliminar Pase
+                        </button>
+                    </form>
+
+                    <a href="{% url 'control:ver_pase' pase.id %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

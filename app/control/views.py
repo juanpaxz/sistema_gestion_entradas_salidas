@@ -10,11 +10,19 @@ from django.db import IntegrityError
 from datetime import datetime, date
 import datetime as _dt
 import logging
-from .models import Empleado, Asistencia, Horario, Justificante, SystemConfig
-from .forms import EmpleadoCreationForm, EmpleadoForm, JustificanteRetardoForm, HorarioForm
+import json
+from .models import Empleado, Asistencia, Horario, Justificante, SystemConfig, Pase
+from .forms import EmpleadoCreationForm, EmpleadoForm, JustificanteRetardoForm, HorarioForm, PaseForm
+from .utils_pdf import generar_pase_pdf
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from io import BytesIO
+import calendar
 
 
 # Configurar logger para la aplicación
@@ -101,6 +109,9 @@ def dashboard(request):
         return HttpResponseForbidden('No tienes permiso para ver esta página')
 
     # Si se envía un formulario para actualizar la configuración (umbral de retardo)
+        # Export PDF (monthly) takes precedence
+        if request.GET.get("exportar") == "pdf":
+            return exportar_asistencias_pdf(request)
     if request.method == 'POST':
         ret_min = request.POST.get('retardo_minutos')
         if ret_min is not None:
@@ -136,6 +147,52 @@ def dashboard(request):
         'empleados_sin_horario': empleados_sin_horario,
     }
     return render(request, 'control/administracion/dashboard.html', context)
+
+
+@login_required
+def systemconfig_api(request):
+    """API simple para obtener/actualizar la configuración del sistema (umbral de retardo).
+
+    GET: devuelve JSON {retardo_minutos: N}
+    POST: espera 'retardo_minutos' en form-data o JSON y actualiza el valor.
+    Solo accesible para usuarios del grupo 'administracion' o superusers.
+    """
+    user = request.user
+    if not (user.is_superuser or user.groups.filter(name='administracion').exists()):
+        return HttpResponseForbidden('No tienes permiso para acceder a esta API')
+
+    try:
+        cfg = SystemConfig.get_solo()
+    except Exception:
+        cfg = None
+
+    if request.method == 'GET':
+        return JsonResponse({'retardo_minutos': cfg.retardo_minutos if cfg else 0})
+
+    # POST: actualizar
+    if request.method == 'POST':
+        # soportar form-data o JSON
+        val = None
+        try:
+            if request.POST.get('retardo_minutos') is not None:
+                val = int(request.POST.get('retardo_minutos'))
+            else:
+                payload = json.loads(request.body.decode('utf-8') or '{}')
+                if 'retardo_minutos' in payload:
+                    val = int(payload.get('retardo_minutos'))
+        except Exception:
+            return JsonResponse({'error': 'Valor inválido'}, status=400)
+
+        if val is None:
+            return JsonResponse({'error': 'Falta retardo_minutos'}, status=400)
+
+        if cfg is None:
+            cfg = SystemConfig.objects.create(retardo_minutos=max(0, val))
+        else:
+            cfg.retardo_minutos = max(0, val)
+            cfg.save()
+
+        return JsonResponse({'retardo_minutos': cfg.retardo_minutos})
 
 @login_required
 def crear_empleado(request):
@@ -546,44 +603,117 @@ def asistencia_events(request):
 
 @login_required
 def reporte_asistencias(request):
-
-    if request.GET.get("exportar") == "excel":
-        return exportar_asistencias_excel(request)
-
     """Generar reporte de asistencias (solo administradores)."""
+    # Si se solicita exportar a PDF, delegar a la función de exportación
+    if request.GET.get('exportar') == 'pdf':
+        return exportar_asistencias_pdf(request)
     if not request.user.groups.filter(name='administracion').exists():
         return HttpResponseForbidden('No tienes permiso para ver esta página')
-
-    # Obtener parámetros de filtrado
-    fecha_inicio = request.GET.get('fecha_inicio')
-    fecha_fin = request.GET.get('fecha_fin')
+    # Obtener parámetros de filtrado mínimos (empleado)
     empleado_id = request.GET.get('empleado_id')
-    tipo = request.GET.get('tipo')
 
-    # Construir el query base
+    # Construir el query base y aplicar filtro por empleado si se indicó
     asistencias = Asistencia.objects.all().select_related('empleado')
-
-    # Aplicar filtros si existen
-    if fecha_inicio:
-        asistencias = asistencias.filter(fecha__gte=fecha_inicio)
-    if fecha_fin:
-        asistencias = asistencias.filter(fecha__lte=fecha_fin)
     if empleado_id:
         asistencias = asistencias.filter(empleado_id=empleado_id)
+
+    # Obtener lista de empleados para el selector
+    empleados = Empleado.objects.filter(estado='activo').order_by('nombre')
+
+    return render(request, 'control/administracion/reporte.html', {
+        'asistencias': asistencias,
+        'empleados': empleados,
+        'empleado_id': empleado_id,
+    })
+
+
+def exportar_asistencias_pdf(request):
+    """Exportar reporte mensual de asistencias a PDF.
+
+    Parámetros esperados (GET):
+    - empleado_id: id del empleado (requerido)
+    - mes_anio: string YYYY-MM (opcional). Si no se provee, se usa el mes actual.
+    """
+    if not request.user.groups.filter(name='administracion').exists() and not request.user.is_superuser:
+        return HttpResponseForbidden('No tienes permiso para ver este reporte')
+
+    empleado_id = request.GET.get('empleado_id')
+    if not empleado_id:
+        return HttpResponse('Debe indicar el empleado para generar el reporte mensual.', status=400)
+
+    mes_anio = request.GET.get('mes_anio')  # formato YYYY-MM
+    tipo = request.GET.get('tipo')
+
+    # Determinar rango de fechas
+    if mes_anio:
+        try:
+            year, month = map(int, mes_anio.split('-'))
+        except Exception:
+            return HttpResponse('Formato de mes inválido. Use YYYY-MM.', status=400)
+    else:
+        today = date.today()
+        year = today.year
+        month = today.month
+
+    # primer y ultimo dia
+    first_day = date(year, month, 1)
+    last_day = date(year, month, calendar.monthrange(year, month)[1])
+
+    asistencias = Asistencia.objects.filter(empleado_id=empleado_id, fecha__gte=first_day, fecha__lte=last_day).select_related('empleado')
     if tipo:
         asistencias = asistencias.filter(tipo=tipo)
 
-    # Obtener lista de empleados para el filtro
-    empleados = Empleado.objects.filter(estado='activo').order_by('nombre')
+    # Preparar PDF
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=36, bottomMargin=36)
+    styles = getSampleStyleSheet()
+    elements = []
 
-    return render(request, 'control/asistencias/reporte.html', {
-        'asistencias': asistencias,
-        'empleados': empleados,
-        'fecha_inicio': fecha_inicio,
-        'fecha_fin': fecha_fin,
-        'empleado_id': empleado_id,
-        'tipo': tipo
-    })
+    empleado_obj = None
+    try:
+        empleado_obj = Empleado.objects.get(pk=empleado_id)
+        title = f"Reporte mensual - {empleado_obj.nombre} {empleado_obj.apellido} - {year}-{str(month).zfill(2)}"
+    except Empleado.DoesNotExist:
+        title = f"Reporte mensual - Empleado {empleado_id} - {year}-{str(month).zfill(2)}"
+
+    elements.append(Paragraph(title, styles['Title']))
+    elements.append(Spacer(1, 12))
+
+    # Tabla encabezados
+    data = [["Fecha", "Entrada", "Salida", "Tipo", "Diferencia(min)", "Observaciones"]]
+
+    for a in asistencias.order_by('fecha'):
+        fecha_str = a.fecha.strftime('%d/%m/%Y')
+        entrada = a.hora_entrada.strftime('%H:%M:%S') if a.hora_entrada else '-'
+        salida = a.hora_salida.strftime('%H:%M:%S') if a.hora_salida else '-'
+        dif = None
+        try:
+            dif = a.compute_diferencia_minutes()
+        except Exception:
+            dif = ''
+        dif_str = str(dif) if dif is not None else '-'
+        data.append([fecha_str, entrada, salida, a.tipo.title(), dif_str, a.observaciones or '-'])
+
+    table = Table(data, colWidths=[72, 72, 72, 72, 72, 140])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#c70f02')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('GRID', (0,0), (-1,-1), 0.25, colors.grey),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+    ]))
+
+    elements.append(table)
+    doc.build(elements)
+
+    buffer.seek(0)
+    filename = f"reporte_asistencias_{empleado_id}_{year}_{str(month).zfill(2)}.pdf"
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
 
 
 @login_required
@@ -703,12 +833,9 @@ def rechazar_justificante(request, justificante_id):
     })
 
 
-from django.http import HttpResponse
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
-from datetime import datetime
-from .models import Asistencia, Empleado
 
 @login_required
 def exportar_asistencias_excel(request):
@@ -795,3 +922,137 @@ def exportar_asistencias_excel(request):
     response["Content-Disposition"] = 'attachment; filename="reporte_asistencias.xlsx"'
     wb.save(response)
     return response
+
+
+# ============= VISTAS PARA PASES DE ENTRADA/SALIDA =============
+
+@login_required
+def crear_pase(request):
+    """Vista para crear un nuevo pase de entrada/salida.
+    Solo accesible por administradores.
+    """
+    if not es_administracion(request.user):
+        return HttpResponseForbidden('No tienes permiso para crear pases.')
+    
+    if request.method == 'POST':
+        form = PaseForm(request.POST)
+        if form.is_valid():
+            pase = form.save(commit=False)
+            pase.creado_por = request.user
+            pase.save()
+            
+            # Generar y guardar PDF
+            try:
+                pdf_content = generar_pase_pdf(pase)
+                nombre_archivo = f'pase_{pase.folio}_{pase.tipo}.pdf'
+                pase.pdf_generado.save(nombre_archivo, pdf_content, save=True)
+                
+                messages.success(request, f'Pase {pase.folio} creado exitosamente.')
+                return redirect('control:listar_pases')
+            except Exception as e:
+                messages.error(request, f'Error al generar PDF: {str(e)}')
+                pase.delete()
+    else:
+        form = PaseForm()
+    
+    return render(request, 'control/administracion/crear_pase.html', {'form': form})
+
+
+@login_required
+def listar_pases(request):
+    """Lista todos los pases creados.
+    Solo accesible por administradores.
+    """
+    if not es_administracion(request.user):
+        return HttpResponseForbidden('No tienes permiso para ver pases.')
+    
+    pases = Pase.objects.all().select_related('empleado', 'creado_por').order_by('-fecha_creacion')
+    
+    # Filtrar por tipo si se proporciona
+    tipo_filtro = request.GET.get('tipo')
+    if tipo_filtro:
+        pases = pases.filter(tipo=tipo_filtro)
+    
+    # Filtrar por empleado si se proporciona
+    empleado_filtro = request.GET.get('empleado')
+    if empleado_filtro:
+        pases = pases.filter(empleado__id=empleado_filtro)
+    
+    contexto = {
+        'pases': pases,
+        'empleados': Empleado.objects.all().order_by('nombre'),
+    }
+    
+    return render(request, 'control/administracion/listar_pases.html', contexto)
+
+
+@login_required
+def descargar_pase_pdf(request, pase_id):
+    """Descarga el PDF del pase."""
+    pase = get_object_or_404(Pase, pk=pase_id)
+    
+    if not es_administracion(request.user):
+        return HttpResponseForbidden('No tienes permiso para descargar pases.')
+    
+    if not pase.pdf_generado:
+        return HttpResponse('El PDF aún no ha sido generado.', status=404)
+    
+    response = HttpResponse(pase.pdf_generado.read(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="pase_{pase.folio}.pdf"'
+    return response
+
+
+@login_required
+def ver_pase(request, pase_id):
+    """Visualiza los detalles de un pase."""
+    pase = get_object_or_404(Pase, pk=pase_id)
+    
+    if not es_administracion(request.user):
+        return HttpResponseForbidden('No tienes permiso para ver pases.')
+    
+    return render(request, 'control/administracion/detalle_pase.html', {'pase': pase})
+
+
+@login_required
+def editar_pase(request, pase_id):
+    """Edita un pase existente."""
+    pase = get_object_or_404(Pase, pk=pase_id)
+    
+    if not es_administracion(request.user):
+        return HttpResponseForbidden('No tienes permiso para editar pases.')
+    
+    if request.method == 'POST':
+        form = PaseForm(request.POST, instance=pase)
+        if form.is_valid():
+            pase = form.save()
+            
+            # Regenerar PDF
+            try:
+                pdf_content = generar_pase_pdf(pase)
+                nombre_archivo = f'pase_{pase.folio}_{pase.tipo}.pdf'
+                pase.pdf_generado.save(nombre_archivo, pdf_content, save=True)
+                messages.success(request, 'Pase actualizado y PDF regenerado.')
+                return redirect('control:ver_pase', pase_id=pase.id)
+            except Exception as e:
+                messages.error(request, f'Error al regenerar PDF: {str(e)}')
+    else:
+        form = PaseForm(instance=pase)
+    
+    return render(request, 'control/administracion/editar_pase.html', {'form': form, 'pase': pase})
+
+
+@login_required
+def eliminar_pase(request, pase_id):
+    """Elimina un pase."""
+    pase = get_object_or_404(Pase, pk=pase_id)
+    
+    if not es_administracion(request.user):
+        return HttpResponseForbidden('No tienes permiso para eliminar pases.')
+    
+    if request.method == 'POST':
+        folio = pase.folio
+        pase.delete()
+        messages.success(request, f'Pase {folio} eliminado.')
+        return redirect('control:listar_pases')
+    
+    return render(request, 'control/administracion/confirmar_eliminar_pase.html', {'pase': pase})

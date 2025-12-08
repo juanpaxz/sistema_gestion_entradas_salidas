@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Empleado, Asistencia, Justificante
+from .models import Empleado, Asistencia, Justificante, Pase
 from .models import Horario
 from django.core.exceptions import ValidationError
 
@@ -196,3 +196,71 @@ class HorarioForm(forms.ModelForm):
 
         return instance
     
+
+class PaseForm(forms.ModelForm):
+    """Formulario para crear pases de entrada/salida"""
+    
+    class Meta:
+        model = Pase
+        fields = ['empleado', 'tipo', 'folio', 'fecha', 'hora', 'hora_reincorporacion', 'asunto', 'observaciones']
+        widgets = {
+            'empleado': forms.Select(attrs={'class': 'form-control'}),
+            'tipo': forms.Select(attrs={'class': 'form-control'}),
+            'folio': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ingrese el folio del pase'
+            }),
+            'fecha': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control'
+            }),
+            'hora': forms.TimeInput(attrs={
+                'type': 'time',
+                'class': 'form-control'
+            }),
+            'hora_reincorporacion': forms.TimeInput(attrs={
+                'type': 'time',
+                'class': 'form-control'
+            }),
+            'asunto': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Asunto del pase'
+            }),
+            'observaciones': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Observaciones (opcional)'
+            }),
+        }
+        labels = {
+            'empleado': 'Empleado',
+            'tipo': 'Tipo de Pase',
+            'folio': 'Folio',
+            'fecha': 'Fecha',
+            'hora': 'Hora de Entrada/Salida',
+            'hora_reincorporacion': 'Hora de Reincorporación',
+            'asunto': 'Asunto',
+            'observaciones': 'Observaciones',
+        }
+    
+    def clean_folio(self):
+        folio = self.cleaned_data.get('folio')
+        if not folio:
+            raise ValidationError('El folio es requerido.')
+        
+        # Verificar que no exista otro pase con el mismo folio
+        if Pase.objects.filter(folio=folio).exclude(pk=self.instance.pk).exists():
+            raise ValidationError('Ya existe un pase con este folio.')
+        
+        return folio
+    
+    def clean(self):
+        cleaned = super().clean()
+        hora = cleaned.get('hora')
+        hora_reincorporacion = cleaned.get('hora_reincorporacion')
+        
+        if hora_reincorporacion and hora:
+            if hora_reincorporacion <= hora:
+                raise ValidationError('La hora de reincorporación debe ser posterior a la hora de entrada/salida.')
+        
+        return cleaned

@@ -1,8 +1,9 @@
 {% load group_tags %}
+{% load static %}
 <style>
   /* Cheerful blue navbar gradient */
   .navbar-custom {
-    background: linear-gradient(90deg, #0d6efd 0%, #4da3ff 100%); /* bright blue gradient */
+    background: linear-gradient(90deg, #c70f02 0%, rgba(199,15,2,0.85) 60%); /* accent gradient */
     padding: .45rem 0;
     box-shadow: 0 4px 18px rgba(0,0,0,0.10);
     z-index: 1030; /* ensure navbar sits above page content when sticky */
@@ -65,7 +66,7 @@
   {% else %}
     <a class="navbar-brand" href="{% url 'control:login' %}">
   {% endif %}
-      <span class="brand-logo">CI</span>
+      <span class="brand-logo"><img src="{% static 'control/img/logo.jpg' %}" alt="Logo" style="width:24px; height:24px; border-radius:4px;"/></span>
       <span class="d-none d-md-inline">Control Incidencias</span>
     </a>
 
@@ -96,6 +97,11 @@
 
       <ul class="navbar-nav ms-auto mb-2 mb-lg-0 d-flex align-items-center nav-actions">
         {% if user.is_authenticated %}
+          {% if user|has_group:"administracion" %}
+            <li class="nav-item mx-1">
+              <a class="nav-link" href="#" id="nav-config-btn" title="Configuración">⚙️</a>
+            </li>
+          {% endif %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
               <span class="user-avatar me-2">{{ user.get_full_name|default:user.username|slice:":1"|upper }}</span>
@@ -120,3 +126,105 @@
     </div>
   </div>
 </nav>
+
+<!-- Modal para configurar retardo (se carga vía AJAX) -->
+<div class="modal fade" id="systemconfigModal" tabindex="-1" aria-labelledby="systemconfigModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="systemconfigModalLabel">Configuración rápida</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div id="systemconfig-alert" style="display:none;" class="alert" role="alert"></div>
+        <form id="systemconfig-form">
+          <div class="mb-2">
+            <label for="nav-retardo-minutos" class="form-label">Minutos de tolerancia</label>
+            <input type="number" min="0" step="1" class="form-control" id="nav-retardo-minutos" name="retardo_minutos" value="5">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-primary" id="systemconfig-save">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  (function(){
+    const btn = document.getElementById('nav-config-btn');
+    if (!btn) return;
+
+    const modalEl = document.getElementById('systemconfigModal');
+    const input = document.getElementById('nav-retardo-minutos');
+    const alertEl = document.getElementById('systemconfig-alert');
+
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      // Cargar valor actual
+      fetch('{% url "control:systemconfig_api" %}', { credentials: 'same-origin' })
+        .then(r => {
+          if (r.status === 403) throw new Error('No autorizado');
+          return r.json();
+        })
+        .then(data => {
+          input.value = data.retardo_minutos || 0;
+          const modal = new bootstrap.Modal(modalEl);
+          modal.show();
+        })
+        .catch(err => {
+          alert('No se pudo cargar la configuración: ' + err.message);
+        });
+    });
+
+    document.getElementById('systemconfig-save').addEventListener('click', function(){
+      const val = parseInt(input.value || '0', 10);
+      const csrftoken = getCookie('csrftoken');
+
+      fetch('{% url "control:systemconfig_api" %}', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({ retardo_minutos: val })
+      })
+      .then(r => r.json().then(body => ({ status: r.status, body })))
+      .then(({status, body}) => {
+        if (status >= 200 && status < 300 && !body.error) {
+          alertEl.className = 'alert alert-success';
+          alertEl.innerText = 'Guardado correctamente';
+          alertEl.style.display = 'block';
+          setTimeout(() => { alertEl.style.display = 'none'; var modal = bootstrap.Modal.getInstance(modalEl); modal.hide(); }, 1200);
+        } else {
+          alertEl.className = 'alert alert-danger';
+          alertEl.innerText = body.error || 'Error al guardar';
+          alertEl.style.display = 'block';
+        }
+      })
+      .catch(err => {
+        alertEl.className = 'alert alert-danger';
+        alertEl.innerText = 'Error de red: ' + err.message;
+        alertEl.style.display = 'block';
+      });
+    });
+  })();
+</script>

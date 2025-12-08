@@ -9,39 +9,23 @@
     <div class="card mb-4">
         <div class="card-body">
             <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
-                    <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" 
-                           value="{{ fecha_inicio|default:'' }}">
-                </div>
-                <div class="col-md-3">
-                    <label for="fecha_fin" class="form-label">Fecha Fin</label>
-                    <input type="date" class="form-control" id="fecha_fin" name="fecha_fin"
-                           value="{{ fecha_fin|default:'' }}">
-                </div>
-                <div class="col-md-3">
+                <div class="col-md-6">
                     <label for="empleado_id" class="form-label">Empleado</label>
-                    <select class="form-select" id="empleado_id" name="empleado_id">
-                        <option value="">Todos</option>
+                    <select class="form-select" id="empleado_id" name="empleado_id" required>
+                        <option value="">-- Selecciona un empleado --</option>
                         {% for empleado in empleados %}
-            <option value="{{ empleado.id }}" {% if empleado_id and empleado.id|stringformat:"s" == empleado_id %}selected{% endif %}>
+                        <option value="{{ empleado.id }}" {% if empleado_id and empleado.id|stringformat:"s" == empleado_id %}selected{% endif %}>
                             {{ empleado }}
                         </option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <label for="tipo" class="form-label">Tipo</label>
-                    <select class="form-select" id="tipo" name="tipo">
-                        <option value="">Todos</option>
-                        <option value="normal" {% if tipo == 'normal' %}selected{% endif %}>Normal</option>
-                        <option value="retardo" {% if tipo == 'retardo' %}selected{% endif %}>Retardo</option>
-                        <option value="falta" {% if tipo == 'falta' %}selected{% endif %}>Falta</option>
-                        <option value="justificada" {% if tipo == 'justificada' %}selected{% endif %}>Justificada</option>
-                    </select>
+                <div class="col-md-3">
+                    <label for="mes_anio" class="form-label">Mes</label>
+                    <input type="month" class="form-control" id="mes_anio" name="mes_anio" value="{{ request.GET.mes_anio|default:'' }}">
                 </div>
-                <div class="col-md-1 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
                 </div>
             </form>
         </div>
@@ -99,8 +83,8 @@
     </div>
     
 
-    <a href="?exportar=excel&{{ request.GET.urlencode }}" class="btn btn-success">
-        Exportar Excel
+    <a href="?exportar=pdf&{{ request.GET.urlencode }}" class="btn btn-danger ms-2">
+        Exportar a PDF
     </a>
 </div>
 {% endblock %}
