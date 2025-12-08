@@ -22,7 +22,7 @@
                 </div>
                 <div class="col-md-3">
                     <label for="mes_anio" class="form-label">Mes</label>
-                    <input type="month" class="form-control" id="mes_anio" name="mes_anio" value="{{ request.GET.mes_anio|default:'' }}">
+                    <input type="month" class="form-control" id="mes_anio" name="mes_anio" value="{{ request.GET.mes_anio|default:'' }}" required>
                 </div>
                 <div class="col-md-3 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary w-100">Filtrar</button>

@@ -7,6 +7,16 @@ from reportlab.pdfgen import canvas
 from io import BytesIO
 from django.conf import settings
 import os
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from django.utils import timezone
+import datetime as _dt
+from datetime import datetime, date
+import calendar
+from reportlab.lib.styles import ParagraphStyle
+from .models import Empleado
 
 
 def generar_pase_pdf(pase):
@@ -248,3 +258,132 @@ def obtener_templates_disponibles():
     if os.path.exists(templates_path):
         return [f for f in os.listdir(templates_path) if f.endswith('.pdf')]
     return []
+
+
+def generar_reporte_asistencias_pdf(asistencias_queryset, empleado_id, year, month):
+    """Genera el PDF del reporte mensual de asistencias.
+
+    Args:
+        asistencias_queryset: QuerySet de Asistencia (filtrado por empleado y rango)
+        empleado_id: id del empleado (usado para el filename y lookup)
+        year: año (int)
+        month: mes (int)
+
+    Returns:
+        (BytesIO, filename)
+    """
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=18, bottomMargin=36)
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('ReportTitle', parent=styles['Title'], fontSize=12, leading=14, spaceAfter=6, alignment=1)
+    elements = []
+
+    empleado_obj = None
+    try:
+        empleado_obj = Empleado.objects.get(pk=empleado_id)
+        title = f"Reporte mensual - {empleado_obj.nombre} {empleado_obj.apellido} - {year}-{str(month).zfill(2)}"
+    except Empleado.DoesNotExist:
+        title = f"Reporte mensual - Empleado {empleado_id} - {year}-{str(month).zfill(2)}"
+
+    # Calcular primer y último día del mes para mostrarlos en el encabezado
+    try:
+        first_day = date(year, month, 1)
+        last_day = date(year, month, calendar.monthrange(year, month)[1])
+        period_text = f"Periodo: {first_day.strftime('%d/%m/%Y')} - {last_day.strftime('%d/%m/%Y')}"
+    except Exception:
+        period_text = ''
+
+    period_style = ParagraphStyle('Period', parent=styles['Normal'], fontSize=9, leading=11, alignment=1, spaceAfter=2)
+    if period_text:
+        elements.append(Paragraph(period_text, period_style))
+    elements.append(Paragraph(title, title_style))
+    elements.append(Spacer(1, 6))
+
+    data = [["Fecha", "Entrada", "Salida", "Tiempo", "Tipo", "Diferencia(min)"]]
+
+    def _format_time_12(t):
+        if not t:
+            return '-'
+        if isinstance(t, _dt.time):
+            return t.strftime('%I:%M %p')
+        try:
+            return timezone.localtime(t).strftime('%I:%M %p')
+        except Exception:
+            try:
+                return str(t)
+            except Exception:
+                return '-'
+
+    def _compute_entrada_salida_diff(entrada, salida, fecha_obj):
+        if not entrada or not salida:
+            return '-'
+        try:
+            if isinstance(entrada, _dt.time):
+                dt_entrada = datetime.combine(fecha_obj, entrada)
+            else:
+                dt_entrada = timezone.localtime(entrada)
+
+            if isinstance(salida, _dt.time):
+                dt_salida = datetime.combine(fecha_obj, salida)
+            else:
+                dt_salida = timezone.localtime(salida)
+
+            if dt_salida < dt_entrada:
+                dt_salida = dt_salida + _dt.timedelta(days=1)
+
+            diff = dt_salida - dt_entrada
+            total_seconds = int(diff.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            return f"{hours:02d}:{minutes:02d}"
+        except Exception:
+            return '-'
+
+    # Construir un mapeo fecha -> asistencia para acceder O(1) por día
+    asistencias_list = list(asistencias_queryset)
+    asist_map = {a.fecha: a for a in asistencias_list}
+
+    # Iterar todos los días del mes y rellenar fila aunque no exista asistencia
+    num_days = (last_day - first_day).days + 1
+    for i in range(num_days):
+        dia = first_day + _dt.timedelta(days=i)
+        a = asist_map.get(dia)
+        fecha_str = dia.strftime('%d/%m/%Y')
+
+        if a:
+            entrada = a.hora_entrada.strftime('%H:%M') if a.hora_entrada else '-'
+            salida = _format_time_12(a.hora_salida)
+            try:
+                dif = a.compute_diferencia_minutes()
+            except Exception:
+                dif = None
+            dif_str = str(dif) if dif is not None else '-'
+            Tiempo = _compute_entrada_salida_diff(a.hora_entrada, a.hora_salida, a.fecha)
+            tipo_str = a.tipo.title()
+        else:
+            entrada = '-'
+            salida = '-'
+            Tiempo = '-'
+            dif_str = '-'
+            tipo_str = '-'
+
+        data.append([fecha_str, entrada, salida, Tiempo, tipo_str, dif_str])
+
+    table = Table(data, colWidths=[64, 72, 90, 64, 64, 64])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.black),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+        ('GRID', (0,0), (-1,-1), 0.25, colors.grey),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+    ]))
+
+    elements.append(table)
+    doc.build(elements)
+
+    buffer.seek(0)
+    filename = f"reporte_asistencias_{empleado_id}_{year}_{str(month).zfill(2)}.pdf"
+    return buffer, filename
