@@ -4,9 +4,9 @@
     "pk": 1,
     "fields": {
       "empleado": 2,
-      "fecha": "2025-11-18",
-      "hora_entrada": "06:57:00",
-      "hora_salida": "17:05:00",
+      "fecha": "2025-12-01",
+      "hora_entrada": "07:00:00",
+      "hora_salida": "17:00:00",
       "tipo": "normal",
       "observaciones": "Registro generado por fixture."
     }
@@ -16,8 +16,8 @@
     "pk": 2,
     "fields": {
       "empleado": 2,
-      "fecha": "2025-11-19",
-      "hora_entrada": "07:01:00",
+      "fecha": "2025-12-02",
+      "hora_entrada": "07:00:00",
       "hora_salida": "17:00:00",
       "tipo": "normal",
       "observaciones": "Registro generado por fixture."
@@ -28,10 +28,10 @@
     "pk": 3,
     "fields": {
       "empleado": 2,
-      "fecha": "2025-11-20",
-      "hora_entrada": "06:55:00",
-      "hora_salida": "17:02:00",
-      "tipo": "normal",
+      "fecha": "2025-12-03",
+      "hora_entrada": "07:15:00",
+      "hora_salida": "17:00:00",
+      "tipo": "retardo",
       "observaciones": "Registro generado por fixture."
     }
   },
@@ -40,10 +40,10 @@
     "pk": 4,
     "fields": {
       "empleado": 2,
-      "fecha": "2025-11-21",
-      "hora_entrada": "07:01:00",
-      "hora_salida": "17:10:00",
-      "tipo": "retardo",
+      "fecha": "2025-12-04",
+      "hora_entrada": "07:00:00",
+      "hora_salida": "17:00:00",
+      "tipo": "normal",
       "observaciones": "Registro generado por fixture."
     }
   },
@@ -52,11 +52,48 @@
     "pk": 5,
     "fields": {
       "empleado": 2,
-      "fecha": "2025-11-22",
-      "hora_entrada": "06:59:00",
+      "fecha": "2025-12-05",
+      "hora_entrada": "07:00:00",
       "hora_salida": "17:00:00",
       "tipo": "normal",
       "observaciones": "Registro generado por fixture."
     }
+  },
+  {
+    "model": "control.Asistencia",
+    "pk": 6,
+    "fields": {
+      "empleado": 2,
+      "fecha": "2025-12-06",
+      "hora_entrada": "07:00:00",
+      "hora_salida": "17:00:00",
+      "tipo": "normal",
+      "observaciones": "Registro generado por fixture."
+    }
+  },
+  {
+    "model": "control.Asistencia",
+    "pk": 7,
+    "fields": {
+      "empleado": 2,
+      "fecha": "2025-12-07",
+      "hora_entrada": "07:00:00",
+      "hora_salida": "17:00:00",
+      "tipo": "normal",
+      "observaciones": "Registro generado por fixture."
+    }
+  },
+  {
+    "model": "control.Asistencia",
+    "pk": 8,
+    "fields": {
+      "empleado": 2,
+      "fecha": "2025-12-08",
+      "hora_entrada": "06:50:00",
+      "hora_salida": "17:00:00",
+      "tipo": "retardo",
+      "observaciones": "Registro generado por fixture."
+    }
   }
+  
 ]

@@ -275,31 +275,40 @@ def generar_reporte_asistencias_pdf(asistencias_queryset, empleado_id, year, mon
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=36, rightMargin=36, topMargin=18, bottomMargin=36)
     styles = getSampleStyleSheet()
-    title_style = ParagraphStyle('ReportTitle', parent=styles['Title'], fontSize=12, leading=14, spaceAfter=6, alignment=1)
+    main_title_style = ParagraphStyle(
+        'MainTitle', parent=styles['Title'], fontSize=14, leading=16, spaceAfter=2, alignment=1
+    )
+    subtitle_style = ParagraphStyle(
+        'Subtitle', parent=styles['Normal'], fontSize=10, leading=12, spaceAfter=4, alignment=1, textColor=colors.grey
+    )
+    period_style = ParagraphStyle('Period', parent=styles['Normal'], fontSize=9, leading=11, alignment=2, spaceAfter=4)
     elements = []
 
     empleado_obj = None
     try:
         empleado_obj = Empleado.objects.get(pk=empleado_id)
-        title = f"Reporte mensual - {empleado_obj.nombre} {empleado_obj.apellido} - {year}-{str(month).zfill(2)}"
+        subtitle = f"{empleado_obj.nombre} {empleado_obj.apellido}"
     except Empleado.DoesNotExist:
-        title = f"Reporte mensual - Empleado {empleado_id} - {year}-{str(month).zfill(2)}"
+        subtitle = f"Empleado {empleado_id}"
 
     # Calcular primer y último día del mes para mostrarlos en el encabezado
     try:
         first_day = date(year, month, 1)
         last_day = date(year, month, calendar.monthrange(year, month)[1])
-        period_text = f"Periodo: {first_day.strftime('%d/%m/%Y')} - {last_day.strftime('%d/%m/%Y')}"
+        period_text = f"{first_day.strftime('%d/%m/%Y')} - {last_day.strftime('%d/%m/%Y')}"
     except Exception:
         period_text = ''
 
-    period_style = ParagraphStyle('Period', parent=styles['Normal'], fontSize=9, leading=11, alignment=1, spaceAfter=2)
+    # Encabezado: período arriba, título y datos en una sola fila
     if period_text:
         elements.append(Paragraph(period_text, period_style))
-    elements.append(Paragraph(title, title_style))
-    elements.append(Spacer(1, 6))
+    header_text = f"Reporte de Asistencias — {subtitle}"
+    elements.append(Paragraph(header_text, main_title_style))
+    elements.append(Spacer(1, 2))
 
-    data = [["Fecha", "Entrada", "Salida", "Tiempo", "Tipo", "Diferencia(min)"]]
+    data = [["Fecha", "Entrada", "Salida", "Tiempo", "Tipo", "Diferncia(min) "]]
+    rest_rows = []  # guardar índices de filas que son descanso para estilarlas
+    obs_rows = []   # guardar índices de filas con observaciones para estilarlas
 
     def _format_time_12(t):
         if not t:
@@ -339,6 +348,15 @@ def generar_reporte_asistencias_pdf(asistencias_queryset, empleado_id, year, mon
         except Exception:
             return '-'
 
+    def _dia_es_descanso(dia):
+        """Determina si el empleado tiene descanso en ese día según su horario."""
+        if not empleado_obj:
+            return False
+        try:
+            return empleado_obj.get_horario_para_fecha(dia) is None
+        except Exception:
+            return False
+
     # Construir un mapeo fecha -> asistencia para acceder O(1) por día
     asistencias_list = list(asistencias_queryset)
     asist_map = {a.fecha: a for a in asistencias_list}
@@ -365,21 +383,49 @@ def generar_reporte_asistencias_pdf(asistencias_queryset, empleado_id, year, mon
             salida = '-'
             Tiempo = '-'
             dif_str = '-'
-            tipo_str = '-'
+            is_rest = _dia_es_descanso(dia)
+            tipo_str = 'Descanso' if is_rest else '-'
+            if is_rest:
+                rest_rows.append(len(data))  # índice de fila en la tabla (incluye header en 0)
 
         data.append([fecha_str, entrada, salida, Tiempo, tipo_str, dif_str])
 
+        # Solo mostrar observación si la asistencia está justificada
+        if a and a.observaciones and a.tipo == 'justificada':
+            obs_text = f"Justificación: {a.observaciones}"
+            data.append([obs_text, '', '', '', '', ''])
+            obs_rows.append(len(data) - 1)  # índice de fila en la tabla
+
     table = Table(data, colWidths=[64, 72, 90, 64, 64, 64])
-    table.setStyle(TableStyle([
+
+    base_style = [
         ('BACKGROUND', (0, 0), (-1, 0), colors.black),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
-        ('GRID', (0,0), (-1,-1), 0.25, colors.grey),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-    ]))
+        ('LINEBELOW', (0,0), (-1,-1), 0.5, colors.grey),
+        ('BOX', (0,0), (-1,-1), 0.5, colors.black),
+    ]
+
+    # resaltar filas de descanso
+    for r in rest_rows:
+        base_style.append(('BACKGROUND', (0, r), (-1, r), colors.whitesmoke))
+        base_style.append(('TEXTCOLOR', (0, r), (-1, r), colors.grey))
+
+    # estilizar filas de observaciones (ocupan toda la fila, sin bordes visibles)
+    for r in obs_rows:
+        base_style.append(('SPAN', (0, r), (-1, r)))
+        base_style.append(('ALIGN', (0, r), (-1, r), 'LEFT'))
+        base_style.append(('TEXTCOLOR', (0, r), (-1, r), colors.black))
+        base_style.append(('FONTNAME', (0, r), (-1, r), 'Helvetica-Oblique'))
+        # quitar solo el borde superior para que se vea ligada a la fila del día
+        base_style.append(('LINEABOVE', (0, r), (-1, r), 0, colors.white))
+        base_style.append(('BOTTOMPADDING', (0, r), (-1, r), 6))
+        base_style.append(('TOPPADDING', (0, r), (-1, r), 4))
+
+    table.setStyle(TableStyle(base_style))
 
     elements.append(table)
     doc.build(elements)

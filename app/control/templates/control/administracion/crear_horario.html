@@ -11,6 +11,7 @@
             {% if horario %}Editar Horario{% else %}Crear Horario{% endif %}
         </h2>
 
+
         {% if form.errors %}
         <div id="error-empleado" class="alert alert-danger border-0 shadow-sm mt-2">
             {% for field, errors in form.errors.items %}
@@ -25,9 +26,15 @@
             {% csrf_token %}
 
             <div class="mb-3">
+                {{ form.nombre.label_tag }}
+                {{ form.nombre }}
+            </div>
+
+            <div class="mb-3">
                 {{ form.empleado_busqueda.label_tag }}
                 {{ form.empleado_busqueda }}
             </div>
+           
 
             <div class="mb-3">
                 <label class="form-label fw-semibold">Dias Laborales:</label>

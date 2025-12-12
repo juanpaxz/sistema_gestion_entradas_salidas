@@ -17,6 +17,7 @@ from django.utils import timezone
 from django.contrib.auth.views import LoginView
 from django.urls import reverse
 from django.db import IntegrityError
+from django.urls import reverse
 
 # Local app
 from .models import Empleado, Asistencia, Horario, Justificante, SystemConfig, Pase
@@ -372,8 +373,6 @@ def empleados_sin_horario(request):
 
 def registro_asistencia(request):
     """Vista completamente pública para el registro de asistencias."""
-
-    
     return render(request, 'control/asistencias/registro.html')
 
 
@@ -517,10 +516,10 @@ def ver_asistencias(request):
             asistencias = Asistencia.objects.filter(empleado=empleado)
             # Obtener el horario aplicable para la fecha actual
             horario_para_hoy = empleado.get_horario_para_fecha()
-            # Obtener notificaciones del empleado (no leídas primero)
+            # Obtener notificaciones del empleado (solo no leídas)
             try:
                 from .models import Notificacion
-                notificaciones = Notificacion.objects.filter(empleado=empleado)
+                notificaciones = Notificacion.objects.filter(empleado=empleado, leido=False)
             except Exception:
                 notificaciones = []
         except Empleado.DoesNotExist:
@@ -625,6 +624,29 @@ def reporte_asistencias(request):
         'empleados': empleados,
         'empleado_id': empleado_id,
     })
+
+
+@login_required
+def justificar_asistencia_admin(request, asistencia_id):
+    """Permite al administrador marcar una asistencia como justificada y agregar observación."""
+    if not es_administracion(request.user):
+        return HttpResponseForbidden('No tienes permiso para realizar esta acción')
+
+    asistencia = get_object_or_404(Asistencia, pk=asistencia_id)
+
+    if request.method != 'POST':
+        return HttpResponse('Método no permitido', status=405)
+
+    observacion = request.POST.get('observacion', '').strip() or 'Justificado por administrador'
+
+    asistencia.tipo = 'justificada'
+    asistencia.observaciones = observacion
+    asistencia.save()
+
+    messages.success(request, f'Asistencia del {asistencia.fecha} justificada con observación.')
+
+    redirect_url = request.META.get('HTTP_REFERER') or reverse('control:reporte_asistencias')
+    return redirect(redirect_url)
 
 
 def exportar_asistencias_pdf(request):
@@ -925,13 +947,13 @@ def eliminar_pase(request, pase_id):
 
 @login_required
 def notificaciones_list(request):
-    """Lista todas las notificaciones (leídas y no leídas) del empleado autenticado."""
+    """Lista solo las notificaciones no leídas del empleado autenticado."""
     try:
         empleado = Empleado.objects.get(user=request.user)
     except Empleado.DoesNotExist:
         return HttpResponseForbidden('No tienes acceso a esta página')
 
-    notifs = empleado.notificaciones.all()
+    notifs = empleado.notificaciones.filter(leido=False)
     return render(request, 'control/notificaciones/list.html', {'notificaciones': notifs})
 
 

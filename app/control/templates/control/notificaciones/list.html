@@ -4,7 +4,7 @@
   <h2>Notificaciones</h2>
   <div class="list-group">
     {% for n in notificaciones %}
-      <div class="list-group-item d-flex justify-content-between align-items-start {% if not n.leido %}bg-light{% endif %}">
+      <div class="list-group-item d-flex justify-content-between align-items-start {% if not n.leido %}bg-light{% endif %}" id="notif-{{ n.id }}">
         <div>
           <h5 class="mb-1">{{ n.titulo }}</h5>
           <p class="mb-1">{{ n.mensaje|linebreaksbr }}</p>
@@ -15,9 +15,7 @@
         </div>
         <div>
           {% if not n.leido %}
-          <form method="post" action="{% url 'control:notificacion_marcar_leida' n.id %}">{% csrf_token %}
-            <button class="btn btn-sm btn-outline-primary" type="submit">Marcar leída</button>
-          </form>
+          <button class="btn btn-sm btn-outline-primary marcar-leida-btn" data-notif-id="{{ n.id }}">Marcar leída</button>
           {% else %}
             <span class="badge bg-success">Leída</span>
           {% endif %}
@@ -28,4 +26,41 @@
     {% endfor %}
   </div>
 </div>
+
+<script>
+document.querySelectorAll('.marcar-leida-btn').forEach(btn => {
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    const notifId = this.dataset.notifId;
+    const notifEl = document.getElementById('notif-' + notifId);
+    
+    // Enviar petición AJAX
+    fetch(`/control/notificaciones/${notifId}/marcar-leida/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        // Animar desaparición
+        notifEl.style.transition = 'opacity 0.3s ease';
+        notifEl.style.opacity = '0';
+        setTimeout(() => {
+          notifEl.remove();
+          // Si no hay más notificaciones, mostrar mensaje vacío
+          if (document.querySelectorAll('.list-group-item').length === 0) {
+            document.querySelector('.list-group').innerHTML = '<div class="text-muted">No tienes notificaciones.</div>';
+          }
+        }, 300);
+      }
+    })
+    .catch(err => console.error('Error:', err));
+  });
+});
+</script>
+
 {% endblock %}

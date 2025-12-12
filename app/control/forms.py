@@ -104,7 +104,7 @@ class JustificanteRetardoForm(forms.ModelForm):
 class HorarioForm(forms.ModelForm):
     empleado_busqueda = forms.CharField(
     label="Empleado (Nombre completo o RFC):",
-    required=True,
+    required=False,
     widget=forms.TextInput(attrs={
         'class': 'form-control form-control',  
         'placeholder': 'Escribe el nombre completo o el RFC'
@@ -147,7 +147,11 @@ class HorarioForm(forms.ModelForm):
 
 
     def clean_empleado_busqueda(self):
-        texto = self.cleaned_data.get('empleado_busqueda').strip()
+        texto = self.cleaned_data.get('empleado_busqueda', '').strip()
+
+        # Si no se proporciona empleado, es opcional
+        if not texto:
+            return texto
 
         # 1. Buscar por RFC
         empleado = Empleado.objects.filter(rfc=texto).first()
@@ -191,8 +195,9 @@ class HorarioForm(forms.ModelForm):
         if commit:
             instance.save()
 
-        # Asignar el horario al empleado validado
-        self.empleado_validado.horarios.add(instance)
+        # Asignar el horario al empleado validado solo si se proporcionó
+        if hasattr(self, 'empleado_validado') and self.empleado_validado:
+            self.empleado_validado.horarios.add(instance)
 
         return instance
     

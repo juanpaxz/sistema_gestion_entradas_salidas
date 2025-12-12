@@ -16,8 +16,8 @@ fi
 # Crear fichero de cron que ejecute la tarea el día 1 a las 00:05
 # Redirigimos la salida a /var/log/cron.log
 cat > ${CRONTAB_FILE} <<'CRON'
-# Ejecutar comando de notificaciones el día 1 a las 00:05
-5 0 1 * * root /env/bin/python /app/manage.py generar_notificaciones_mensuales >> /var/log/cron.log 2>&1
+# Ejecutar comando de notificaciones todos los dias a las 10:00
+0 10 * * *  root /env/bin/python /app/manage.py generar_notificaciones_mensuales >> /var/log/cron.log 2>&1
 CRON
 
 # Ajustar permisos
